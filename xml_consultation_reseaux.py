@@ -1,5 +1,28 @@
 # -*- coding:utf-8 -*-
+"""
+/***************************************************************************
+ xml_consultation_reseau.py
 
+ DT-DICT-DC-ATU xml parsing class
+
+ XmlConsultationReseau class extracts data from DT-DICT-DC-ATU xml file and
+ put them in dictionary.
+
+        begin                : 2020-03-07
+        git sha              : $Format:%H$
+        copyright            : (C) 2020 by Jean-Marie Arsac
+        email                : jmarsac@azimut.fr
+ ***************************************************************************/
+
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+"""
 from lxml import etree
 
 class XmlConsultationReseaux:
