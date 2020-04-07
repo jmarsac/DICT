@@ -433,25 +433,42 @@
          <property name="title">
           <string>Choix du moteur de rendu du formulaire cerfa</string>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_21">
-          <item>
-           <widget class="QRadioButton" name="radioQGisComposer">
-            <property name="text">
-             <string>Composeur QGis</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="radioPoppler">
-            <property name="text">
-             <string>Poppler (nécessite l'installation de pypoppler-Qt5 et de ses dépendances)</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
+         <widget class="QWidget" name="">
+          <property name="geometry">
+           <rect>
+            <x>20</x>
+            <y>40</y>
+            <width>448</width>
+            <height>74</height>
+           </rect>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_14">
+           <item>
+            <widget class="QRadioButton" name="radioQGisComposer">
+             <property name="text">
+              <string>Composeur QGis</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="radioPoppler">
+             <property name="text">
+              <string>Poppler (nécessite l'installation de pypoppler-Qt5 et de ses dépendances)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="radioPdfReader">
+             <property name="text">
+              <string>Visionneuse PDF (permettant de remplir un formulaire)</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </widget>
        </item>
        <item>

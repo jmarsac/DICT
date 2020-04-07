@@ -25,6 +25,9 @@ from PyQt5.QtCore import (QSettings, QTranslator, qVersion,
                           QFile, Qt, QUrl)
 from PyQt5.QtWidgets import QAction, QMessageBox, QDialog
 from PyQt5.QtGui import QIcon, QDesktopServices
+
+from qgis.core import Qgis
+
 # Initialize Qt resources from file resources.py
 from . import resources
 # Import the code for the dialog
@@ -32,12 +35,14 @@ from .DICT_about import DICTAbout
 from .DICT_dialog import DICTDialog
 from .DICT_dialog_config import DICTDialogConfig
 from .DICT_xml import DICT_xml
+from .fdf_buffer import FdfBuffer
 
 import os.path
 import sys
 import tempfile
 import subprocess
-
+import shutil
+import encodings
 
 class DICT(object):
     """QGIS Plugin Implementation."""
@@ -221,20 +226,60 @@ class DICT(object):
         result = self.dlg.exec_()
         # See if OK was pressed
         if result:
+            titre = ""
+            pdf = ""
+            planPDF = []
             msgBox = QMessageBox()
             msgBox.setTextFormat(Qt.RichText)
             dtdict = DICT_xml(self.dlg.lineEdit.text())
-            # Prépare le formulaire
-            titre, pdf = dtdict.formulaire()
-            if titre is None:
-                return
-            try:
-                planPDF = dtdict.geometriePDF(titre)
-            except :
-                msgBox.setText("Erreur lors de la création du plan, vérifiez si votre composition est correctement configurée")
-                msgBox.exec_()
-                msgBox = QMessageBox()
-                msgBox.setTextFormat(Qt.RichText)
+            if QSettings().value("/DICT/formPDFReader") is True:
+                prefix = QSettings().value("/DICT/prefRecep") + "-" if QSettings().value("/DICT/prefRecep") != "" else ""
+                suffix = "-" + QSettings().value("/DICT/sufRecep") if QSettings().value("/DICT/sufRecep") != "" else ""
+                filename = prefix + dtdict.xml_demande.type_demande() \
+                           + "-" + dtdict.xml_demande.no_teleservice()\
+                           + suffix
+                titre = filename
+
+                self.fdf_buffer = FdfBuffer()
+                self.fdf_buffer.open(filename + ".pdf")
+                type_demande = dtdict.xml_demande.dictionnaire()["type_demande"]
+                self.fdf_buffer.add_checkbox_value(type_demande == "DT", "Recepisse_DT")
+                self.fdf_buffer.add_checkbox_value(type_demande == "DICT", "Recepisse_DICT")
+                self.fdf_buffer.add_checkbox_value(type_demande == "DC", "Recepisse_DC")
+                self.fdf_buffer.add_text_value(dtdict.xml_demande.dictionnaire()["no_teleservice"],"NoGU")
+                self.fdf_buffer.close()
+
+                source_path = os.path.join(os.path.dirname(__file__), "formulaire_pdf")
+                source_pdf_form = os.path.join(source_path, 'cerfa_14435-04.pdf')
+                target_path = QSettings().value("/DICT/configRep")
+                target_form = os.path.join(target_path, filename)
+
+                #print("source=", source_pdf_form)
+                #print("target=",target_form)
+                shutil.copy2(source_pdf_form, target_form + ".pdf")
+                try:
+                    fdf_file = open(target_form + '.fdf', "w", encoding="utf-8")
+                    for line in self.fdf_buffer.get_buffer():
+                        print(line, file=fdf_file)
+                except:
+                    self.iface.messageBar().pushMessage("Impossible de créer fichier FDF", "", Qgis.Info )
+                else:
+                    fdf_file.close()
+                    pdf = target_form + ".pdf"
+
+            else:
+                # Prépare le formulaire
+                titre, pdf = dtdict.formulaire()
+                if titre is None:
+                    return
+                try:
+                    planPDF = dtdict.geometriePDF(titre)
+                except :
+                    msgBox.setText("Erreur lors de la création du plan, vérifiez si votre composition est correctement configurée")
+                    msgBox.exec_()
+                    msgBox = QMessageBox()
+                    msgBox.setTextFormat(Qt.RichText)
+
             if QFile.exists(pdf) and \
                     all([QFile.exists(p) for p in planPDF]) and \
                     pdf and len(planPDF) > 0:

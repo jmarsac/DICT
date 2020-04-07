@@ -92,8 +92,18 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
             self.radioQGisComposer.setChecked(True)
             QtCore.QSettings().setValue("/DICT/formPoppler",
                                         self.radioPoppler.isChecked())
+            QtCore.QSettings().setValue("/DICT/formPDFReader",
+                                        self.radioPdfReader.isChecked())
+        elif QtCore.QSettings().value("/DICT/formPDFReader", True):
+            self.radioPdfReader.setChecked(True)
+            QtCore.QSettings().setValue("/DICT/formPoppler",
+                                        self.radioPoppler.isChecked())
+            QtCore.QSettings().setValue("/DICT/formQGIS",
+                                        self.radioQGisComposer.isChecked())
         else:
             self.radioQGisComposer.setChecked(False)
+            self.radioPdfReader.setChecked(False)
+            self.radioPoppler.setChecked(True)
 
         if QtCore.QSettings().value("/DICT/formPoppler"):
             try:
@@ -193,6 +203,7 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
                 import popplerqt5
                 QtCore.QSettings().setValue("/DICT/formPoppler", True)
                 QtCore.QSettings().setValue("/DICT/formQGIS", False)
+                QtCore.QSettings().setValue("/DICT/formPDFReader", False)
                 self.radioPoppler.setChecked(True)
             except:
                 txt = "Poppler n'a pas été détecté sur votre système.\n"
@@ -203,10 +214,16 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
                                           txt)
 
                 self.radioQGisComposer.setChecked(True)
+                QtCore.QSettings().setValue("/DICT/formPDFReader", False)
                 QtCore.QSettings().setValue("/DICT/formPoppler", False)
                 QtCore.QSettings().setValue("/DICT/formQGIS", True)
+        elif self.radioPdfReader.isChecked():
+            QtCore.QSettings().setValue("/DICT/formPDFReader", True)
+            QtCore.QSettings().setValue("/DICT/formPoppler", False)
+            QtCore.QSettings().setValue("/DICT/formQGIS", False)
         else:
             self.radioQGisComposer.setChecked(True)
+            QtCore.QSettings().setValue("/DICT/formPDFReader", False)
             QtCore.QSettings().setValue("/DICT/formPoppler", False)
             QtCore.QSettings().setValue("/DICT/formQGIS", True)
 
