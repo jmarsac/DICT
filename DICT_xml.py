@@ -8,6 +8,8 @@ from PyQt5.QtWidgets import QMessageBox
 from .DICT_geometrie import DICT_geometrie
 from .DICT_dialog_wizard import DICTDialogWizard
 
+from .xml_consultation_reseaux import XmlConsultationReseaux
+
 from dateutil import parser
 import tempfile
 import os
@@ -20,31 +22,36 @@ class DICT_xml(object):
         msgBox = QMessageBox()
         msgBox.setTextFormat(Qt.RichText)
 
-        try:
-            self._xmldoc = minidom.parse(xml_file)
-        except IOError:
-            msgBox.setText("Fichier XML introuvable.")
-            msgBox.exec_()
-            return
+        if QSettings().value("/DICT/formPDFReader") is True:
+            self.xml_demande = XmlConsultationReseaux()
+            if self.xml_demande.open(xml_file) in ["DT", "DICT", "DC", "ATU"]:
+                #print(self.xml_demande.type_demande(), self.xml_demande.no_teleservice())
+                self.xml_demande.extract_data()
+                #print(self.xml_demande.emprise_epsg())
+                #print(self.xml_demande.emprise_dimension())
+                #print(self.xml_demande.emprise_gml_geom())
+                #print(self.xml_demande.emprise_gml_geom())
+                self.xml_demande.view_dictionnaire()
+        else:
+            try:
+                self._xmldoc = minidom.parse(xml_file)
+            except IOError:
+                msgBox.setText("Fichier XML introuvable.")
+                msgBox.exec_()
+                return
 
-        try:
-            (self._rc_pref, self._gml_tag,
-            self._gml_alt_tag, self._geom_tag) = self.__initTag()
-            self._taillePlan = self.__findFormatPlan()
-            self._attributs = self.__createAttributs()
-        except:
-            msgBox.setText("Erreur de lecture du fichier XML.")
-            msgBox.exec_()
-            return
-
-        #try:
-        # Dessine la géométrie
-        self.geom = DICT_geometrie(self._xmldoc, self._geom_tag, self._gml_tag, self._gml_alt_tag)
-        self.geom.addGeometrie()
-        #except:
-        #    msgBox.setText("Erreur lors de la génération de la géométrie.")
-         #   msgBox.exec_()
-          #  return
+            try:
+                (self._rc_pref, self._gml_tag,
+                self._gml_alt_tag, self._geom_tag) = self.__initTag()
+                self._taillePlan = self.__findFormatPlan()
+                self._attributs = self.__createAttributs()
+                # Dessine la géométrie
+                self.geom = DICT_geometrie(self._xmldoc, self._geom_tag, self._gml_tag, self._gml_alt_tag)
+                self.geom.addGeometrie()
+            except:
+                msgBox.setText("Erreur de lecture du fichier XML.")
+                msgBox.exec_()
+                return
 
     def __initTag(self):
         rc_base = 'http://www.reseaux-et-canalisations.gouv.fr/' + \
