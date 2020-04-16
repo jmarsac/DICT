@@ -43,6 +43,7 @@ import tempfile
 import subprocess
 import shutil
 import encodings
+import datetime
 
 class DICT(object):
     """QGIS Plugin Implementation."""
@@ -104,12 +105,12 @@ class DICT(object):
         icon_path,
         text,
         callback,
-        enabled_flag=True,
-        add_to_menu=True,
-        add_to_toolbar=True,
-        status_tip=None,
-        whats_this=None,
-        parent=None):
+        enabled_flag = True,
+        add_to_menu = True,
+        add_to_toolbar = True,
+        status_tip = None,
+        whats_this = None,
+        parent = None):
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -178,32 +179,32 @@ class DICT(object):
         icon_configuration_path = ':/plugins/DICT/config.png'
         self.add_action(
             icon_configuration_path,
-            text=self.tr('DICT configuration'),
-            callback=self.runConfig,
-            parent=self.iface.mainWindow())
+            text = self.tr('DICT configuration'),
+            callback = self.runConfig,
+            parent = self.iface.mainWindow())
 
         icon_path = ':/plugins/DICT/icon.png'
         self.add_action(
             icon_path,
-            text=self.tr('DICT'),
-            callback=self.run,
-            parent=self.iface.mainWindow())
+            text = self.tr('DICT'),
+            callback = self.run,
+            parent = self.iface.mainWindow())
 
         self.add_action(
             '',
             text=self.tr('À propos'),
-            callback=self.runAbout,
-            parent=self.iface.mainWindow(),
-            add_to_toolbar=False)
+            callback = self.runAbout,
+            parent = self.iface.mainWindow(),
+            add_to_toolbar = False)
 
         self.add_action(
             '',
-            text=self.tr('Aide'),
-            callback=self.runHelp,
-            parent=self.iface.mainWindow(),
-            add_to_toolbar=False)
+            text = self.tr('Aide'),
+            callback = self.runHelp,
+            parent = self.iface.mainWindow(),
+            add_to_toolbar = False)
 
-        firstUse = QSettings().value("DICT/isFirstUse" , 1, type=int)
+        firstUse = QSettings().value("DICT/isFirstUse" , 1, type = int)
         if firstUse == 1:
             QSettings().setValue("DICT/isFirstUse", 0)
             self.runAbout()
@@ -246,7 +247,65 @@ class DICT(object):
                 self.fdf_buffer.add_checkbox_value(type_demande == "DT", "Recepisse_DT")
                 self.fdf_buffer.add_checkbox_value(type_demande == "DICT", "Recepisse_DICT")
                 self.fdf_buffer.add_checkbox_value(type_demande == "DC", "Recepisse_DC")
-                self.fdf_buffer.add_text_value(dtdict.xml_demande.dictionnaire()["no_teleservice"],"NoGU")
+                self.fdf_buffer.add_text_value(dtdict.xml_demande.dictionnaire()["no_teleservice"], "NoGU")
+
+                # exploitant infos
+                self.fdf_buffer.add_text_value("S.D.E.V", "RaisonSocialeExploitant")
+                self.fdf_buffer.add_text_value("", "ContactExploitant")
+                self.fdf_buffer.add_text_value("28 rue de la clé d'or", "NoVoieExploitant")
+                self.fdf_buffer.add_text_value("BP 142", "LieuditBPExploitant")
+                self.fdf_buffer.add_text_value("88004", "CodePostalExploitant")
+                self.fdf_buffer.add_text_value("EPINAL cedex", "CommuneExploitant")
+                self.fdf_buffer.add_text_value("0329291960", "TelExploitant")
+                self.fdf_buffer.add_text_value("0329824436", "FaxExploitant")
+                self.fdf_buffer.add_text_value("", "CategorieReseau1")
+                self.fdf_buffer.add_text_value("", "RepresentantExploitant")
+                self.fdf_buffer.add_text_value("", "TelModification")
+                self.fdf_buffer.add_text_value("0329291960", "TelEndommagement")
+                self.fdf_buffer.add_text_value("112", "Endommagement")
+                self.fdf_buffer.add_text_value("Jean-Claude Anotta", "NomResponsableDossier")
+                self.fdf_buffer.add_text_value("Service DT/DICT", "DésignationService")
+                self.fdf_buffer.add_text_value("0329291960", "TelResponsableDossier")
+                self.fdf_buffer.add_text_value("S.D.E.V", "NomSignataire")
+                #self.fdf_buffer.add_text_value("vvv", "ttt")
+                # declarant infos
+                dico_declarant = dtdict.xml_demande.dictionnaire()
+            
+                if "no_teleservice" in dico_declarant:
+                    self.fdf_buffer.add_text_value(dico_declarant["no_teleservice"], "NoGU")
+                if "dec_denomination" in dico_declarant:
+                    self.fdf_buffer.add_text_value(dico_declarant["dec_denomination"], "Denomination")
+                if "dec_adresse2" in dico_declarant:
+                    self.fdf_buffer.add_text_value(dico_declarant["dec_adresse2"], "ComplementAdresse")
+                if "dec_no_voie" in dico_declarant and "dec_voie" in dico_declarant:
+                    self.fdf_buffer.add_text_value(dico_declarant["dec_no_voie"] + " " + dico_declarant["dec_voie"], "NoVoie")
+                elif "dec_voie" in dico_declarant:
+                    self.fdf_buffer.add_text_value(dico_declarant["dec_voie"], "NoVoie")
+                if "dec_lieudit_bp" in dico_declarant:
+                    self.fdf_buffer.add_text_value(dico_declarant["dec_lieudit_bp"], "LieuditBP")
+                if "dec_code_postal" in dico_declarant:
+                    self.fdf_buffer.add_text_value(dico_declarant["dec_code_postal"], "CodePostal")
+                if "dec_commune" in dico_declarant:
+                    self.fdf_buffer.add_text_value(dico_declarant["dec_commune"], "Commune")
+                if "dec_pays" in dico_declarant:
+                    self.fdf_buffer.add_text_value(dico_declarant["dec_pays"], "Pays")
+                if "dec_affaire" in dico_declarant:
+                    self.fdf_buffer.add_text_value(dico_declarant["dec_affaire"], "NoAffaireDeclarant")
+                if "dec_contact" in dico_declarant:
+                    self.fdf_buffer.add_text_value(dico_declarant["dec_contact"], "Personne_Contacter")
+                if "declaration_at" in dico_declarant:
+                    self.fdf_buffer.add_text_value(datetime.datetime.fromisoformat(dico_declarant["declaration_at"]).strftime("%d"), "JourReception")
+                    self.fdf_buffer.add_text_value(datetime.datetime.fromisoformat(dico_declarant["declaration_at"]).strftime("%m"), "MoisReception")
+                    self.fdf_buffer.add_text_value(datetime.datetime.fromisoformat(dico_declarant["declaration_at"]).strftime("%Y"), "AnneeReception")
+                if "tvx_commune" in dico_declarant:
+                    self.fdf_buffer.add_text_value(dico_declarant["tvx_commune"], "CommuneTravaux")
+                if "tvx_adresse" in dico_declarant:
+                    self.fdf_buffer.add_text_value(dico_declarant["tvx_adresse"], "AdresseTravaux")
+
+                self.fdf_buffer.add_text_value(datetime.date.today().strftime("%d"), "JourRecepisse")
+                self.fdf_buffer.add_text_value(datetime.date.today().strftime("%m"), "MoisRecepisse")
+                self.fdf_buffer.add_text_value(datetime.date.today().strftime("%Y"), "AnneeRecepisse")
+            
                 self.fdf_buffer.close()
 
                 source_path = os.path.join(os.path.dirname(__file__), "formulaire_pdf")
@@ -258,7 +317,7 @@ class DICT(object):
                 #print("target=",target_form)
                 shutil.copy2(source_pdf_form, target_form + ".pdf")
                 try:
-                    fdf_file = open(target_form + '.fdf', "w", encoding="utf-8")
+                    fdf_file = open(target_form + '.fdf', "w", encoding="iso-8859-1")
                     for line in self.fdf_buffer.get_buffer():
                         print(line, file=fdf_file)
                 except:
@@ -266,6 +325,11 @@ class DICT(object):
                 else:
                     fdf_file.close()
                     pdf = target_form + ".pdf"
+                    if QSettings().value("DICT/configPDFReader") and ".exe" in str(QSettings().value("DICT/configPDFReader")).lower():
+                        if QFile.exists(QSettings().value("DICT/configPDFReader")):
+                            print(QFile.exists(QSettings().value("DICT/configPDFReader")))
+                            subprocess.call([QSettings().value("/DICT/configPDFReader"), target_form + ".fdf"])
+
 
             else:
                 # Prépare le formulaire
