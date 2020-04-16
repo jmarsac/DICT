@@ -53,6 +53,9 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         self.configPDFTK.setText(QtCore.QSettings().value(
                                 "/DICT/configPDFTK",
                                 QtCore.QDir.homePath()))
+        self.configPDFReader.setText(QtCore.QSettings().value(
+                                "/DICT/configPDFReader",
+                                QtCore.QDir.homePath()))
         self.configExtension.setText(QtCore.QSettings().value(
                                 "/DICT/configExtension"))
         self.signSignature.setText(QtCore.QSettings().value(
@@ -186,11 +189,19 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
             QtCore.QSettings().setValue("/DICT/" + nom, QtCore.QDir.homePath())
         repertoire.setText(QtCore.QSettings().value("/DICT/" + nom))
 
+    def fullpath(self, full_path, name):
+        fullpath = full_path.text()
+        if fullpath:
+            print("name: ", name, "fullpath: ", fullpath)
+            if QtCore.QFileInfo(fullpath).exists():
+                print("setValue: ", "/DICT/" + name, ", ", fullpath)
+                QtCore.QSettings().setValue("/DICT/" + name, fullpath)
+
     def accept(self):
         self.rep(self.configRep, "configRep")
         self.rep(self.configRepXML, "configRepXML")
         self.rep(self.configPDFTK, "configPDFTK")
-        self.rep(self.configPDFReader, "configPDFReader")
+        self.fullpath(self.configPDFReader, "configPDFReader")
 
         QtCore.QSettings().setValue("/DICT/configExtension",
                                     self.configExtension.text())
