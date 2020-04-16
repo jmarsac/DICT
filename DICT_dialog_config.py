@@ -101,9 +101,11 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
             QtCore.QSettings().setValue("/DICT/formQGIS",
                                         self.radioQGisComposer.isChecked())
         else:
-            self.radioQGisComposer.setChecked(False)
-            self.radioPdfReader.setChecked(False)
             self.radioPoppler.setChecked(True)
+            QtCore.QSettings().setValue("/DICT/formQGIS",
+                                        self.radioQGisComposer.isChecked())
+            QtCore.QSettings().setValue("/DICT/formPDFReader",
+                                        self.radioPdfReader.isChecked())
 
         if QtCore.QSettings().value("/DICT/formPoppler"):
             try:
@@ -114,8 +116,17 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
                 self.radioPoppler.setChecked(True)
             except:
                 self.radioQGisComposer.setChecked(True)
+                QtCore.QSettings().setValue("/DICT/formQGIS",
+                                        self.radioQGisComposer.isChecked())
                 QtCore.QSettings().setValue("/DICT/formPoppler",
                                             self.radioPoppler.isChecked())
+
+        if QtCore.QSettings().value("/DICT/formPdfReader"):
+            self.toolButtonPDFReader.setEnabled(True)
+            self.configPDFReader.setEnabled(True)
+        else:
+            self.toolButtonPDFReader.setEnabled(False)
+            self.configPDFReader.setEnabled(False)
 
         self.toolButton.pressed.connect(
             lambda: self.showDialogConfig(self.configRep))
@@ -123,6 +134,8 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
             lambda: self.showDialogConfig(self.configRepXML))
         self.toolButtonPDFTK.pressed.connect(
             lambda: self.showDialogConfig(self.configPDFTK, "Executable"))
+        self.toolButtonPDFReader.pressed.connect(
+            lambda: self.showDialogConfig(self.configPDFReader, "Executable"))
 
         self.okButton = self.button_box.button(QtWidgets.QDialogButtonBox.Ok)
         self.okButton.clicked.connect(self.accept)
@@ -130,6 +143,16 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         self.cancelButton = self.button_box.button(
                                 QtWidgets.QDialogButtonBox.Cancel)
         self.cancelButton.clicked.connect(self.close)
+
+        self.radioPdfReader.toggled.connect(self.on_radio_pdfreader_toggled)
+
+    def on_radio_pdfreader_toggled(self, is_checked):
+        if is_checked:
+            self.toolButtonPDFReader.setEnabled(True)
+            self.configPDFReader.setEnabled(True)
+        else:
+            self.toolButtonPDFReader.setEnabled(False)
+            self.configPDFReader.setEnabled(False)
 
     def showDialogConfig(self, obj, flags="Directory"):
         if flags == "Directory":
@@ -164,6 +187,7 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         self.rep(self.configRep, "configRep")
         self.rep(self.configRepXML, "configRepXML")
         self.rep(self.configPDFTK, "configPDFTK")
+        self.rep(self.configPDFReader, "configPDFReader")
 
         QtCore.QSettings().setValue("/DICT/configExtension",
                                     self.configExtension.text())
