@@ -41,6 +41,9 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
+        # TODO: remove Poppler radio button
+        self.radioPoppler.setVisible(False)
+
         self.configRep.setText(QtCore.QSettings().value(
                                 "/DICT/configRep",
                                 QtCore.QDir.homePath()))
