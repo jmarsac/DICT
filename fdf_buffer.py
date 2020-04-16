@@ -8,7 +8,7 @@
  For FDF specifications see :
  https://www.adobe.com/content/dam/acom/en/devnet/acrobat/pdfs/fdf_data_exchange.pdf
 
-        begin                : 2020-12-03-07
+        begin                : 2020-03-07
         git sha              : $Format:%H$
         copyright            : (C) 2020 by Jean-Marie Arsac
         email                : jmarsac@azimut.fr
@@ -52,9 +52,10 @@ class FdfBuffer:
         self.__buffer.append("<</V({})/T({})>>".format(on_off,tag_name))
 
     def add_text_value(self, value, tag_name):
-        self.__buffer.append("<</V({})/T({})>>".format(self.clean_fdf_value(value), tag_name))
+        if value is not None and tag_name is not None:
+            self.__buffer.append("<</V({})/T({})>>".format(self.__clean_fdf_value(value), tag_name))
 
-    def clean_fdf_value(self,s_value):
+    def __clean_fdf_value(self,s_value):
         return s_value.replace("(","{").replace(")","}")
 
     def get_buffer(self):
