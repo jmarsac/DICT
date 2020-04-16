@@ -31,7 +31,26 @@ class DICT_xml(object):
                 #print(self.xml_demande.emprise_dimension())
                 #print(self.xml_demande.emprise_gml_geom())
                 #print(self.xml_demande.emprise_gml_geom())
-                self.xml_demande.view_dictionnaire()
+                #self.xml_demande.view_dictionnaire()
+            try:
+                self._xmldoc = minidom.parse(xml_file)
+            except IOError:
+                msgBox.setText("Fichier XML introuvable.")
+                msgBox.exec_()
+                return
+
+            try:
+                (self._rc_pref, self._gml_tag,
+                self._gml_alt_tag, self._geom_tag) = self.__initTag()
+                self._taillePlan = self.__findFormatPlan()
+                # Dessine la géométrie
+                self.geom = DICT_geometrie(self._xmldoc, self._geom_tag, self._gml_tag, self._gml_alt_tag)
+                self.geom.addGeometrie()
+            except:
+                msgBox.setText("Erreur de lecture du fichier XML.")
+                msgBox.exec_()
+                return
+
         else:
             try:
                 self._xmldoc = minidom.parse(xml_file)
