@@ -325,7 +325,9 @@ class DICT(object):
                 else:
                     fdf_file.close()
                     pdf = target_form + ".pdf"
-                    if QSettings().value("DICT/configPDFReader") and ".exe" in str(QSettings().value("DICT/configPDFReader")).lower():
+                    if QSettings().value("DICT/configPDFReader") \
+                    and str(QSettings().value("DICT/configPDFReader")).lower().endswith(".exe") \
+                    if sys.platform == "win32" else True:
                         if QFile.exists(QSettings().value("DICT/configPDFReader")):
                             print(QFile.exists(QSettings().value("DICT/configPDFReader")))
                             subprocess.call([QSettings().value("/DICT/configPDFReader"), target_form + ".fdf"])
