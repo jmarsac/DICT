@@ -37,7 +37,7 @@ from .DICT_dialog_config import DICTDialogConfig
 from .DICT_xml import DICT_xml
 from .fdf_buffer import FdfBuffer
 
-import os.path
+import os
 import sys
 import tempfile
 import subprocess
@@ -233,7 +233,7 @@ class DICT(object):
             msgBox = QMessageBox()
             msgBox.setTextFormat(Qt.RichText)
             dtdict = DICT_xml(self.dlg.lineEdit.text())
-            if QSettings().value("/DICT/formPDFReader") is True:
+            if True and QSettings().value("/DICT/formPDFReader") is True:
                 prefix = QSettings().value("/DICT/prefRecep") + "-" if QSettings().value("/DICT/prefRecep") != "" else ""
                 suffix = "-" + QSettings().value("/DICT/sufRecep") if QSettings().value("/DICT/sufRecep") != "" else ""
                 filename = prefix + dtdict.xml_demande.type_demande() \
@@ -325,12 +325,14 @@ class DICT(object):
                 else:
                     fdf_file.close()
                     pdf = target_form + ".pdf"
-                    if QSettings().value("DICT/configPDFReader") \
-                    and str(QSettings().value("DICT/configPDFReader")).lower().endswith(".exe") \
-                    if sys.platform == "win32" else True:
-                        if QFile.exists(QSettings().value("DICT/configPDFReader")):
-                            print(QFile.exists(QSettings().value("DICT/configPDFReader")))
-                            subprocess.call([QSettings().value("/DICT/configPDFReader"), target_form + ".fdf"])
+                    os.startfile(target_form + ".fdf")
+                try:
+                    planPDF = dtdict.geometriePDF(titre)
+                except :
+                    msgBox.setText("Erreur lors de la création du plan, vérifiez si votre composition est correctement configurée")
+                    msgBox.exec_()
+                    msgBox = QMessageBox()
+                    msgBox.setTextFormat(Qt.RichText)
 
 
             else:
