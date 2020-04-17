@@ -233,120 +233,90 @@ class DICT(object):
             msgBox = QMessageBox()
             msgBox.setTextFormat(Qt.RichText)
             dtdict = DICT_xml(self.dlg.lineEdit.text())
-            if True and QSettings().value("/DICT/formPDFReader") is True:
-                prefix = QSettings().value("/DICT/prefRecep") + "-" if QSettings().value("/DICT/prefRecep") != "" else ""
-                suffix = "-" + QSettings().value("/DICT/sufRecep") if QSettings().value("/DICT/sufRecep") != "" else ""
-                filename = prefix + dtdict.xml_demande.type_demande() \
-                           + "-" + dtdict.xml_demande.no_teleservice()\
-                           + suffix
-                titre = filename
 
-                self.fdf_buffer = FdfBuffer()
-                self.fdf_buffer.open(filename + ".pdf")
-                type_demande = dtdict.xml_demande.dictionnaire()["type_demande"]
-                self.fdf_buffer.add_checkbox_value(type_demande == "DT", "Recepisse_DT")
-                self.fdf_buffer.add_checkbox_value(type_demande == "DICT", "Recepisse_DICT")
-                self.fdf_buffer.add_checkbox_value(type_demande == "DC", "Recepisse_DC")
-                self.fdf_buffer.add_text_value(dtdict.xml_demande.dictionnaire()["no_teleservice"], "NoGU")
+            prefix = QSettings().value("/DICT/prefRecep") + "-" if QSettings().value("/DICT/prefRecep") != "" else ""
+            suffix = "-" + QSettings().value("/DICT/sufRecep") if QSettings().value("/DICT/sufRecep") != "" else ""
+            filename = prefix + dtdict.xml_demande.type_demande() \
+                       + "-" + dtdict.xml_demande.no_teleservice()\
+                       + suffix
+            titre = filename
 
-                # exploitant infos
-                self.fdf_buffer.add_text_value("S.D.E.V", "RaisonSocialeExploitant")
-                self.fdf_buffer.add_text_value("", "ContactExploitant")
-                self.fdf_buffer.add_text_value("28 rue de la clé d'or", "NoVoieExploitant")
-                self.fdf_buffer.add_text_value("BP 142", "LieuditBPExploitant")
-                self.fdf_buffer.add_text_value("88004", "CodePostalExploitant")
-                self.fdf_buffer.add_text_value("EPINAL cedex", "CommuneExploitant")
-                self.fdf_buffer.add_text_value("0329291960", "TelExploitant")
-                self.fdf_buffer.add_text_value("0329824436", "FaxExploitant")
-                self.fdf_buffer.add_text_value("", "CategorieReseau1")
-                self.fdf_buffer.add_text_value("", "RepresentantExploitant")
-                self.fdf_buffer.add_text_value("", "TelModification")
-                self.fdf_buffer.add_text_value("0329291960", "TelEndommagement")
-                self.fdf_buffer.add_text_value("112", "Endommagement")
-                self.fdf_buffer.add_text_value("Jean-Claude Anotta", "NomResponsableDossier")
-                self.fdf_buffer.add_text_value("Service DT/DICT", "DésignationService")
-                self.fdf_buffer.add_text_value("0329291960", "TelResponsableDossier")
-                self.fdf_buffer.add_text_value("S.D.E.V", "NomSignataire")
-                #self.fdf_buffer.add_text_value("vvv", "ttt")
-                # declarant infos
-                dico_declarant = dtdict.xml_demande.dictionnaire()
-            
-                if "no_teleservice" in dico_declarant:
-                    self.fdf_buffer.add_text_value(dico_declarant["no_teleservice"], "NoGU")
-                if "dec_denomination" in dico_declarant:
-                    self.fdf_buffer.add_text_value(dico_declarant["dec_denomination"], "Denomination")
-                if "dec_adresse2" in dico_declarant:
-                    self.fdf_buffer.add_text_value(dico_declarant["dec_adresse2"], "ComplementAdresse")
-                if "dec_no_voie" in dico_declarant and "dec_voie" in dico_declarant:
-                    self.fdf_buffer.add_text_value(dico_declarant["dec_no_voie"] + " " + dico_declarant["dec_voie"], "NoVoie")
-                elif "dec_voie" in dico_declarant:
-                    self.fdf_buffer.add_text_value(dico_declarant["dec_voie"], "NoVoie")
-                if "dec_lieudit_bp" in dico_declarant:
-                    self.fdf_buffer.add_text_value(dico_declarant["dec_lieudit_bp"], "LieuditBP")
-                if "dec_code_postal" in dico_declarant:
-                    self.fdf_buffer.add_text_value(dico_declarant["dec_code_postal"], "CodePostal")
-                if "dec_commune" in dico_declarant:
-                    self.fdf_buffer.add_text_value(dico_declarant["dec_commune"], "Commune")
-                if "dec_pays" in dico_declarant:
-                    self.fdf_buffer.add_text_value(dico_declarant["dec_pays"], "Pays")
-                if "dec_affaire" in dico_declarant:
-                    self.fdf_buffer.add_text_value(dico_declarant["dec_affaire"], "NoAffaireDeclarant")
-                if "dec_contact" in dico_declarant:
-                    self.fdf_buffer.add_text_value(dico_declarant["dec_contact"], "Personne_Contacter")
-                if "declaration_at" in dico_declarant:
-                    self.fdf_buffer.add_text_value(datetime.datetime.fromisoformat(dico_declarant["declaration_at"]).strftime("%d"), "JourReception")
-                    self.fdf_buffer.add_text_value(datetime.datetime.fromisoformat(dico_declarant["declaration_at"]).strftime("%m"), "MoisReception")
-                    self.fdf_buffer.add_text_value(datetime.datetime.fromisoformat(dico_declarant["declaration_at"]).strftime("%Y"), "AnneeReception")
-                if "tvx_commune" in dico_declarant:
-                    self.fdf_buffer.add_text_value(dico_declarant["tvx_commune"], "CommuneTravaux")
-                if "tvx_adresse" in dico_declarant:
-                    self.fdf_buffer.add_text_value(dico_declarant["tvx_adresse"], "AdresseTravaux")
+            self.fdf_buffer = FdfBuffer()
+            self.fdf_buffer.open(filename + ".pdf")
+            type_demande = dtdict.xml_demande.dictionnaire()["type_demande"]
+            self.fdf_buffer.add_checkbox_value(type_demande == "DT", "Recepisse_DT")
+            self.fdf_buffer.add_checkbox_value(type_demande == "DICT", "Recepisse_DICT")
+            self.fdf_buffer.add_checkbox_value(type_demande == "DC", "Recepisse_DC")
+            self.fdf_buffer.add_text_value(dtdict.xml_demande.dictionnaire()["no_teleservice"], "NoGU")
 
-                self.fdf_buffer.add_text_value(datetime.date.today().strftime("%d"), "JourRecepisse")
-                self.fdf_buffer.add_text_value(datetime.date.today().strftime("%m"), "MoisRecepisse")
-                self.fdf_buffer.add_text_value(datetime.date.today().strftime("%Y"), "AnneeRecepisse")
-            
-                self.fdf_buffer.close()
-
-                source_path = os.path.join(os.path.dirname(__file__), "formulaire_pdf")
-                source_pdf_form = os.path.join(source_path, 'cerfa_14435-04.pdf')
-                target_path = QSettings().value("/DICT/configRep")
-                target_form = os.path.join(target_path, filename)
-
-                #print("source=", source_pdf_form)
-                #print("target=",target_form)
-                shutil.copy2(source_pdf_form, target_form + ".pdf")
-                try:
-                    fdf_file = open(target_form + '.fdf', "w", encoding="iso-8859-1")
-                    for line in self.fdf_buffer.get_buffer():
-                        print(line, file=fdf_file)
-                except:
-                    self.iface.messageBar().pushMessage("Impossible de créer fichier FDF", "", Qgis.Info )
-                else:
-                    fdf_file.close()
-                    pdf = target_form + ".pdf"
-                    os.startfile(target_form + ".fdf")
-                try:
-                    planPDF = dtdict.geometriePDF(titre)
-                except :
-                    msgBox.setText("Erreur lors de la création du plan, vérifiez si votre composition est correctement configurée")
-                    msgBox.exec_()
-                    msgBox = QMessageBox()
-                    msgBox.setTextFormat(Qt.RichText)
+            # TODO exploitant infos
 
 
+            # declarant infos
+            dico_declarant = dtdict.xml_demande.dictionnaire()
+        
+            if "no_teleservice" in dico_declarant:
+                self.fdf_buffer.add_text_value(dico_declarant["no_teleservice"], "NoGU")
+            if "dec_denomination" in dico_declarant:
+                self.fdf_buffer.add_text_value(dico_declarant["dec_denomination"], "Denomination")
+            if "dec_adresse2" in dico_declarant:
+                self.fdf_buffer.add_text_value(dico_declarant["dec_adresse2"], "ComplementAdresse")
+            if "dec_no_voie" in dico_declarant and "dec_voie" in dico_declarant:
+                self.fdf_buffer.add_text_value(dico_declarant["dec_no_voie"] + " " + dico_declarant["dec_voie"], "NoVoie")
+            elif "dec_voie" in dico_declarant:
+                self.fdf_buffer.add_text_value(dico_declarant["dec_voie"], "NoVoie")
+            if "dec_lieudit_bp" in dico_declarant:
+                self.fdf_buffer.add_text_value(dico_declarant["dec_lieudit_bp"], "LieuditBP")
+            if "dec_code_postal" in dico_declarant:
+                self.fdf_buffer.add_text_value(dico_declarant["dec_code_postal"], "CodePostal")
+            if "dec_commune" in dico_declarant:
+                self.fdf_buffer.add_text_value(dico_declarant["dec_commune"], "Commune")
+            if "dec_pays" in dico_declarant:
+                self.fdf_buffer.add_text_value(dico_declarant["dec_pays"], "Pays")
+            if "dec_affaire" in dico_declarant:
+                self.fdf_buffer.add_text_value(dico_declarant["dec_affaire"], "NoAffaireDeclarant")
+            if "dec_contact" in dico_declarant:
+                self.fdf_buffer.add_text_value(dico_declarant["dec_contact"], "Personne_Contacter")
+            if "declaration_at" in dico_declarant:
+                self.fdf_buffer.add_text_value(datetime.datetime.fromisoformat(dico_declarant["declaration_at"]).strftime("%d"), "JourReception")
+                self.fdf_buffer.add_text_value(datetime.datetime.fromisoformat(dico_declarant["declaration_at"]).strftime("%m"), "MoisReception")
+                self.fdf_buffer.add_text_value(datetime.datetime.fromisoformat(dico_declarant["declaration_at"]).strftime("%Y"), "AnneeReception")
+            if "tvx_commune" in dico_declarant:
+                self.fdf_buffer.add_text_value(dico_declarant["tvx_commune"], "CommuneTravaux")
+            if "tvx_adresse" in dico_declarant:
+                self.fdf_buffer.add_text_value(dico_declarant["tvx_adresse"], "AdresseTravaux")
+
+            self.fdf_buffer.add_text_value(datetime.date.today().strftime("%d"), "JourRecepisse")
+            self.fdf_buffer.add_text_value(datetime.date.today().strftime("%m"), "MoisRecepisse")
+            self.fdf_buffer.add_text_value(datetime.date.today().strftime("%Y"), "AnneeRecepisse")
+        
+            self.fdf_buffer.close()
+
+            source_path = os.path.join(os.path.dirname(__file__), "formulaire_pdf")
+            source_pdf_form = os.path.join(source_path, 'cerfa_14435-04.pdf')
+            target_path = QSettings().value("/DICT/configRep")
+            target_form = os.path.join(target_path, filename)
+
+            #print("source=", source_pdf_form)
+            #print("target=",target_form)
+            shutil.copy2(source_pdf_form, target_form + ".pdf")
+            try:
+                fdf_file = open(target_form + '.fdf', "w", encoding="iso-8859-1")
+                for line in self.fdf_buffer.get_buffer():
+                    print(line, file=fdf_file)
+            except:
+                self.iface.messageBar().pushMessage("Impossible de créer fichier FDF", "", Qgis.Info )
             else:
-                # Prépare le formulaire
-                titre, pdf = dtdict.formulaire()
-                if titre is None:
-                    return
-                try:
-                    planPDF = dtdict.geometriePDF(titre)
-                except :
-                    msgBox.setText("Erreur lors de la création du plan, vérifiez si votre composition est correctement configurée")
-                    msgBox.exec_()
-                    msgBox = QMessageBox()
-                    msgBox.setTextFormat(Qt.RichText)
+                fdf_file.close()
+                pdf = target_form + ".pdf"
+                os.startfile(target_form + ".fdf")
+            try:
+                planPDF = dtdict.geometriePDF(titre)
+            except :
+                msgBox.setText("Erreur lors de la création du plan, vérifiez si votre composition est correctement configurée")
+                msgBox.exec_()
+                msgBox = QMessageBox()
+                msgBox.setTextFormat(Qt.RichText)
 
             if QFile.exists(pdf) and \
                     all([QFile.exists(p) for p in planPDF]) and \

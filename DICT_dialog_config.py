@@ -41,9 +41,6 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
-        # TODO: remove Poppler radio button
-        self.radioPoppler.setVisible(False)
-
         self.configRep.setText(QtCore.QSettings().value(
                                 "/DICT/configRep",
                                 QtCore.QDir.homePath()))
@@ -52,9 +49,6 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
                                 QtCore.QDir.homePath()))
         self.configPDFTK.setText(QtCore.QSettings().value(
                                 "/DICT/configPDFTK",
-                                QtCore.QDir.homePath()))
-        self.configPDFReader.setText(QtCore.QSettings().value(
-                                "/DICT/configPDFReader",
                                 QtCore.QDir.homePath()))
         self.configExtension.setText(QtCore.QSettings().value(
                                 "/DICT/configExtension"))
@@ -94,54 +88,12 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         else:
             self.fusionPDF.setChecked(False)
 
-        if QtCore.QSettings().value("/DICT/formQGIS", True):
-            self.radioQGisComposer.setChecked(True)
-            QtCore.QSettings().setValue("/DICT/formPoppler",
-                                        self.radioPoppler.isChecked())
-            QtCore.QSettings().setValue("/DICT/formPDFReader",
-                                        self.radioPdfReader.isChecked())
-        elif QtCore.QSettings().value("/DICT/formPDFReader", True):
-            self.radioPdfReader.setChecked(True)
-            QtCore.QSettings().setValue("/DICT/formPoppler",
-                                        self.radioPoppler.isChecked())
-            QtCore.QSettings().setValue("/DICT/formQGIS",
-                                        self.radioQGisComposer.isChecked())
-        else:
-            self.radioPoppler.setChecked(True)
-            QtCore.QSettings().setValue("/DICT/formQGIS",
-                                        self.radioQGisComposer.isChecked())
-            QtCore.QSettings().setValue("/DICT/formPDFReader",
-                                        self.radioPdfReader.isChecked())
-
-        if QtCore.QSettings().value("/DICT/formPoppler"):
-            try:
-                import popplerqt5
-                self.radioQGisComposer.setChecked(False)
-                QtCore.QSettings().setValue("/DICT/formPoppler",
-                                            self.radioQGisComposer.isChecked())
-                self.radioPoppler.setChecked(True)
-            except:
-                self.radioQGisComposer.setChecked(True)
-                QtCore.QSettings().setValue("/DICT/formQGIS",
-                                        self.radioQGisComposer.isChecked())
-                QtCore.QSettings().setValue("/DICT/formPoppler",
-                                            self.radioPoppler.isChecked())
-
-        if QtCore.QSettings().value("/DICT/formPdfReader"):
-            self.toolButtonPDFReader.setEnabled(True)
-            self.configPDFReader.setEnabled(True)
-        else:
-            self.toolButtonPDFReader.setEnabled(False)
-            self.configPDFReader.setEnabled(False)
-
         self.toolButton.pressed.connect(
             lambda: self.showDialogConfig(self.configRep))
         self.toolButtonXML.pressed.connect(
             lambda: self.showDialogConfig(self.configRepXML))
         self.toolButtonPDFTK.pressed.connect(
             lambda: self.showDialogConfig(self.configPDFTK, "Executable"))
-        self.toolButtonPDFReader.pressed.connect(
-            lambda: self.showDialogConfig(self.configPDFReader, "Executable"))
 
         self.okButton = self.button_box.button(QtWidgets.QDialogButtonBox.Ok)
         self.okButton.clicked.connect(self.accept)
@@ -150,15 +102,6 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
                                 QtWidgets.QDialogButtonBox.Cancel)
         self.cancelButton.clicked.connect(self.close)
 
-        self.radioPdfReader.toggled.connect(self.on_radio_pdfreader_toggled)
-
-    def on_radio_pdfreader_toggled(self, is_checked):
-        if is_checked:
-            self.toolButtonPDFReader.setEnabled(True)
-            self.configPDFReader.setEnabled(True)
-        else:
-            self.toolButtonPDFReader.setEnabled(False)
-            self.configPDFReader.setEnabled(False)
 
     def showDialogConfig(self, obj, flags="Directory"):
         if flags == "Directory":
@@ -201,7 +144,6 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         self.rep(self.configRep, "configRep")
         self.rep(self.configRepXML, "configRepXML")
         self.rep(self.configPDFTK, "configPDFTK")
-        self.fullpath(self.configPDFReader, "configPDFReader")
 
         QtCore.QSettings().setValue("/DICT/configExtension",
                                     self.configExtension.text())
@@ -235,35 +177,6 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
 
         QtCore.QSettings().setValue("/DICT/fusionPDF",
                                     self.fusionPDF.isChecked())
-
-        if self.radioPoppler.isChecked():
-            try:
-                import popplerqt5
-                QtCore.QSettings().setValue("/DICT/formPoppler", True)
-                QtCore.QSettings().setValue("/DICT/formQGIS", False)
-                QtCore.QSettings().setValue("/DICT/formPDFReader", False)
-                self.radioPoppler.setChecked(True)
-            except:
-                txt = "Poppler n'a pas été détecté sur votre système.\n"
-                txt += "Le composeur QGis sera utilisé par défaut.\n"
-
-                QtWidgets.QMessageBox.warning(self,
-                                          "Erreur de configuration poppler",
-                                          txt)
-
-                self.radioQGisComposer.setChecked(True)
-                QtCore.QSettings().setValue("/DICT/formPDFReader", False)
-                QtCore.QSettings().setValue("/DICT/formPoppler", False)
-                QtCore.QSettings().setValue("/DICT/formQGIS", True)
-        elif self.radioPdfReader.isChecked():
-            QtCore.QSettings().setValue("/DICT/formPDFReader", True)
-            QtCore.QSettings().setValue("/DICT/formPoppler", False)
-            QtCore.QSettings().setValue("/DICT/formQGIS", False)
-        else:
-            self.radioQGisComposer.setChecked(True)
-            QtCore.QSettings().setValue("/DICT/formPDFReader", False)
-            QtCore.QSettings().setValue("/DICT/formPoppler", False)
-            QtCore.QSettings().setValue("/DICT/formQGIS", True)
 
         self.close()
 
