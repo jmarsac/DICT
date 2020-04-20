@@ -27,12 +27,25 @@ Le XML reçu est à ouvrir via la boîte de dialogue suivante :
 
 ![chargement du xml](images/chargement_xml.png)
 
-Vous serez ensuite guidé par un assistant qui reprend la logique du formulaire PDF. Des contrôles sont en place pour éviter les erreurs de saisie.
+Le formulaire Cerfa 14435 est pré-rempli avec les informations du déclarant extraites après analyse du fichier XML et celles de l'exploitant saisies dans la boîte de diaalogue
+de configuration. Le plugin vous permet alors de le compléter en l'ouvrant avec la visionneuse PDF définie par défaut dans le système d'exploitation.
 
-![assistant, onglet "Informations et coordonnées"](images/wizard1.png)
-![assistant, onglet "Réponse à la DICT"](images/wizard2.png)
-![assistant, onglet "Sécurité et signature"](images/wizard3.png)
+Toute visionneuse supportant le format FDF (Acrobat Form Data Format) d'Adobe est utilisable:
 
+![visionneuse, "Réponse à la DICT"](images/exemple.pdf)
+
+**Le nom du PDF de réponse est constitué de la manière suivante:
+<prefixe>-<type_demande>-<no_teleservice>-<suffixe>
+
+Par exemple, avec la configuration ci-dessus, le PDF de réponse à la DT-DICT numéro 2020041064952S s'appellera :
+
+récépissé_-DC-2020041064952S-2018.pdf
+
+Une fois le formulaire rempli, il suffit de l'enregistrer. Suivant les capacités de votre visionneuse, vous pourrez également le signer (par exemple, si 
+vous utilisez Acrobat Reader DC, avec l'outil de signature intégré matérialisé par une pointe de stylo plume).
+
+![visionneuse, "Signature"](images/signature1.pdf)
+  
 Le plugin doit s'utiliser sur un projet ouvert comprenant vos réseaux et les composeurs d'impression qui seront utilisés pour la sortie des plans.
 Après avoir rempli le formulaire, vous devez sélectionner le composeur pour l'impression PDF. Vous pouvez noter une emprise de chantier indiquant l'emprise de la demande.
 
