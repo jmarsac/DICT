@@ -509,8 +509,8 @@ class DICT(object):
                 fdf_file = open(target_form + '.fdf', "w", encoding="iso-8859-1")
                 for line in self.fdf_buffer.get_buffer():
                     print(line, file=fdf_file)
-            except:
-                self.iface.messageBar().pushMessage("Impossible de créer fichier FDF", "", Qgis.Info )
+            except Exception as e:
+                self.iface.messageBar().pushMessage("Impossible de créer fichier FDF", str(e), Qgis.Info )
             else:
                 fdf_file.close()
                 pdf = target_form + ".pdf"
