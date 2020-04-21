@@ -56,6 +56,9 @@ class FdfBuffer:
             self.__buffer.append("<</V({})/T({})>>".format(self.__clean_fdf_value(value), tag_name))
 
     def __clean_fdf_value(self,s_value):
+        import re
+        # remove non ascii chars
+        s_value =  re.sub(r'[^\x00-\x7f]',r'', s_value)
         return s_value.replace("(","{").replace(")","}")
 
     def get_buffer(self):
