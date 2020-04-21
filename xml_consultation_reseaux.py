@@ -57,7 +57,6 @@ class XmlConsultationReseaux:
         ki = 'p'
         for k in self.__nsmap.keys():
             if k is None:
-                print(ki + str(i))
                 self.__nsmap[ki + str(i)] = self.__nsmap.pop(k)
                 i += 1
 
@@ -81,9 +80,6 @@ class XmlConsultationReseaux:
                     self.__gts_prefix = k + ":"
                 elif "http://www.isotc211.org/2005/gss" in self.__nsmap[k]:
                     self.__gss_prefix = k + ":"
-
-        for k in self.__nsmap.keys():
-            print("key=", k if k is not None else 'None', "value=", self.__nsmap[k])
 
         el = self.__root.xpath('/{0}dossierConsultation/{0}*'.format(self.__ineris_prefix), namespaces=self.__nsmap)
 
