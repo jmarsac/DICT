@@ -116,7 +116,6 @@ class XmlConsultationReseaux:
 
     def __extract_emprise_geom(self):
         if self.__type_demande == "DC":
-            print('/descendant::{0}partieDICT/{0}emprise/{0}geometrie/{1}surfaceMembers/*'.format(self.__ineris_prefix,self.__gml_prefix))
             el = self.__root.xpath('/descendant::{0}partieDICT/{0}emprise/{0}geometrie/{1}surfaceMembers/*'.format(self.__ineris_prefix,self.__gml_prefix), namespaces=self.__nsmap)
         else:
             el = self.__root.xpath('/descendant::{0}emprise/{0}geometrie/{1}surfaceMembers/*'.format(self.__ineris_prefix,self.__gml_prefix), namespaces=self.__nsmap)
@@ -125,7 +124,6 @@ class XmlConsultationReseaux:
                 self.__gml_geom.append(etree.tounicode(e))
         else:
             if self.__type_demande == "DC":
-                print('/descendant::{0}partieDICT/{0}emprise/{0}geometrie/{1}surfaceMember/*'.format(self.__ineris_prefix,self.__gml_prefix))
                 el = self.__root.xpath('/descendant::{0}partieDICT/{0}emprise/{0}geometrie/{1}surfaceMember/*'.format(self.__ineris_prefix,self.__gml_prefix), namespaces=self.__nsmap)
             else:
                 el = self.__root.xpath('/descendant::{0}emprise/{0}geometrie/{1}surfaceMember/*'.format(self.__ineris_prefix,self.__gml_prefix), namespaces=self.__nsmap)
