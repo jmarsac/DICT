@@ -42,6 +42,9 @@ class DICT_geometrie(object):
 
         return qgs_geometry
 
+    def removeExistingGeometries(self):
+        for layer in QgsProject.instance().mapLayersByName("Emprise du chantier"):
+            QgsProject.instance().removeMapLayer(layer.id())
 
     def addGeometrie(self):
         vl = "multipolygon?crs=epsg:" + self._epsg + "&index=yes"
