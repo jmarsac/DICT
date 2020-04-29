@@ -10,86 +10,52 @@ from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtWidgets import QMessageBox
 from .DICT_dialog_composer import DICTDialogComposer
 from math import ceil, pow
+from osgeo import ogr
 import os
 
 
 class DICT_geometrie(object):
-    def __init__(self, xml, epsg_tag, gml_tag, gml_tag_alt):
+    def __init__(self, gml, epsg=4326):
 
         msgBox = QMessageBox()
         msgBox.setTextFormat(Qt.RichText)
+        self._epsg = epsg
+        self._geom = []
         try:
-            self._epsg = self.__findEPSG(xml, epsg_tag)
-        except:
-            msgBox.setText("Erreur d'analyse du code EPSG.")
-            msgBox.exec_()
-            return
-        try:
-            self._geom = self.__getGeom(xml, gml_tag, gml_tag_alt)
+            self._geom = self.__dictGmlGeom2qgisGeom(gml)
         except:
             msgBox.setText("Erreur d'analyse de la géométrie.")
             msgBox.exec_()
             return
 
-    def __dictGeom2qgisGeom(self, geom):
-        geom = geom.replace(' ', '*')
-        geom = geom.replace(',', ' ')
-        geom = geom.replace('*', ',')
+    def __dictGmlGeom2qgisGeom(self, gml):
+        try:
+            l = len(gml)
+            if l > 0:
+                qgs_geometry = []
+                for gml_string in gml:
+                    polygon = QgsGeometry.fromWkt(ogr.CreateGeometryFromGML(gml_string).ExportToWkt())
+                    qgs_geometry.append(polygon)
+        except Exception as e:
+            qgs_geometry = [QgsGeometry()]
+            iface.messageBar().pushMessage("Erreur analyse GML", str(e) + gml_string, Qgis.Info )
 
-        wkt = "POLYGON ((" + geom + "))"
-        return QgsGeometry.fromWkt(wkt)
+        return qgs_geometry
 
-    def __dictAltGeom2qgisGeom(self, geom):
-        s = ""
-        count = 0
-        for i in geom:
-            if i == ' ':
-                if count % 2 == 0:
-                    s += ','
-                else:
-                    s += ' '
-                count += 1
-            else:
-                s += i
-        return self.__dictGeom2qgisGeom(s)
-
-    def __findEPSG(self, xml, epsg_tag):
-        epsg_xml = xml.getElementsByTagName(epsg_tag)
-        att = epsg_xml[0].attributes['srsName']
-        nValue = att.firstChild.nodeValue
-        posEpsg = nValue.rfind(':') + 1
-
-        return nValue[posEpsg:]
-
-    def __getGeom(self, xml, gml_tag, gml_tag_alt):
-        version = -1
-        geom_txt = xml.getElementsByTagName(gml_tag)
-        if(len(geom_txt) > 0):
-            version = 1
-        else:
-            geom_txt = xml.getElementsByTagName(gml_tag_alt)
-            if(len(geom_txt) > 0):
-                version = 2
-
-        g = geom_txt[0].firstChild.nodeValue
-        if version == 1:
-            geom = self.__dictGeom2qgisGeom(g)
-        elif version == 2:
-            geom = self.__dictAltGeom2qgisGeom(g)
-
-
-        return geom
 
     def addGeometrie(self):
-        vl = "Polygon?crs=epsg:" + self._epsg + "&index=yes"
+        vl = "multipolygon?crs=epsg:" + self._epsg + "&index=yes"
         mem_layer = QgsVectorLayer(vl, "Emprise du chantier", "memory")
         pr = mem_layer.dataProvider()
 
-        f = QgsFeature()
+        f = []
+        nb = 0
+        for geom in self._geom:
+            f.append(QgsFeature())
+            f[nb].setGeometry(geom)
+            nb += 1
 
-        f.setGeometry(self._geom)
-
-        pr.addFeatures([f])
+        pr.addFeatures(f)
         mem_layer.commitChanges()
         mem_layer.updateExtents()
         prop = mem_layer.renderer().symbol().symbolLayers()[0].properties()
@@ -101,7 +67,7 @@ class DICT_geometrie(object):
         mc = iface.mapCanvas()
         projectCRSSrsid = mc.mapSettings().destinationCrs().authid()
 
-        geomBB = self._geom
+        geomBB = self._geom[0]
         sourceCrs = QgsCoordinateReferenceSystem(layerCRSSrsid)
         destCrs = QgsCoordinateReferenceSystem(projectCRSSrsid)
         tr = QgsCoordinateTransform(sourceCrs, destCrs, QgsProject.instance())

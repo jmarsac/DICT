@@ -115,10 +115,21 @@ class XmlConsultationReseaux:
             self.__srs_dimension = el[0].get("srsDimension")
 
     def __extract_emprise_geom(self):
-        el = self.__root.xpath('/descendant::{0}emprise/{0}geometrie/{1}surfaceMembers/*'.format(self.__ineris_prefix,self.__gml_prefix), namespaces=self.__nsmap)
+        if self.__type_demande == "DC":
+            el = self.__root.xpath('/descendant::{0}partieDICT/{0}emprise/{0}geometrie/{1}surfaceMembers/*'.format(self.__ineris_prefix,self.__gml_prefix), namespaces=self.__nsmap)
+        else:
+            el = self.__root.xpath('/descendant::{0}emprise/{0}geometrie/{1}surfaceMembers/*'.format(self.__ineris_prefix,self.__gml_prefix), namespaces=self.__nsmap)
         if el is not None and len(el) > 0:
             for e in el:
                 self.__gml_geom.append(etree.tounicode(e))
+        else:
+            if self.__type_demande == "DC":
+                el = self.__root.xpath('/descendant::{0}partieDICT/{0}emprise/{0}geometrie/{1}surfaceMember/*'.format(self.__ineris_prefix,self.__gml_prefix), namespaces=self.__nsmap)
+            else:
+                el = self.__root.xpath('/descendant::{0}emprise/{0}geometrie/{1}surfaceMember/*'.format(self.__ineris_prefix,self.__gml_prefix), namespaces=self.__nsmap)
+            if el is not None and len(el) > 0:
+                for e in el:
+                    self.__gml_geom.append(etree.tounicode(e))
 
     def view_emprise_gml_geom(self):
         for gg in self.__gml_geom:
