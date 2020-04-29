@@ -514,7 +514,7 @@ class DICT(object):
             else:
                 fdf_file.close()
                 pdf = target_form + ".pdf"
-                os.startfile(target_form + ".fdf")
+                self.open_file(target_form + ".fdf")
             try:
                 planPDF = dtdict.geometriePDF(titre)
             except :
@@ -604,3 +604,10 @@ class DICT(object):
             msgBox.exec_()
 
         return ret >= 0
+
+    def open_file(self, fullfilename):
+        if sys.platform == "win32":
+            os.startfile(fullfilename)
+        else:
+            opener ="open" if sys.platform == "darwin" else "xdg-open"
+            subprocess.call([opener, fullfilename])
