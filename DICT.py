@@ -44,6 +44,7 @@ import subprocess
 import shutil
 import encodings
 import datetime
+import dateutil.parser
 
 class DICT(object):
     """QGIS Plugin Implementation."""
@@ -483,9 +484,11 @@ class DICT(object):
             if "dec_contact" in dico_declarant:
                 self.fdf_buffer.add_text_value(dico_declarant["dec_contact"], "Personne_Contacter")
             if "declaration_at" in dico_declarant:
-                self.fdf_buffer.add_text_value(datetime.datetime.fromisoformat(dico_declarant["declaration_at"]).strftime("%d"), "JourReception")
-                self.fdf_buffer.add_text_value(datetime.datetime.fromisoformat(dico_declarant["declaration_at"]).strftime("%m"), "MoisReception")
-                self.fdf_buffer.add_text_value(datetime.datetime.fromisoformat(dico_declarant["declaration_at"]).strftime("%Y"), "AnneeReception")
+                declaration_at = dateutil.parser.isoparse(dico_declarant["declaration_at"])
+
+                self.fdf_buffer.add_text_value(declaration_at.strftime("%d"), "JourReception")
+                self.fdf_buffer.add_text_value(declaration_at.strftime("%m"), "MoisReception")
+                self.fdf_buffer.add_text_value(declaration_at.strftime("%Y"), "AnneeReception")
             if "tvx_commune" in dico_declarant:
                 self.fdf_buffer.add_text_value(dico_declarant["tvx_commune"], "CommuneTravaux")
             if "tvx_adresse" in dico_declarant:
