@@ -43,6 +43,8 @@ class DICT_xml(object):
             # Dessine la géométrie
             err_msg = "Erreur analyse XML"
             self.geom = DICT_geometrie(self.xml_demande.emprise_gml_geom(),self.xml_demande.emprise_epsg())
+            err_msg = "Erreur suppression emprises existantes"
+            self.geom.removeExistingGeometries()
             err_msg = "Erreur ajout géométrie"
             self.geom.addGeometrie()
         except Exception as e:
