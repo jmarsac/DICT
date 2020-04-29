@@ -67,10 +67,10 @@ class DICT_geometrie(object):
         mc = iface.mapCanvas()
         projectCRSSrsid = mc.mapSettings().destinationCrs().authid()
 
-        geomBB = self._geom[0]
         sourceCrs = QgsCoordinateReferenceSystem(layerCRSSrsid)
         destCrs = QgsCoordinateReferenceSystem(projectCRSSrsid)
         tr = QgsCoordinateTransform(sourceCrs, destCrs, QgsProject.instance())
+        geomBB = QgsGeometry.fromRect(mem_layer.extent())
         geomBB.transform(tr)
         self._geomBB = geomBB.boundingBox()
         mc.setExtent(self._geomBB)
