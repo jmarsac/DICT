@@ -1,6 +1,7 @@
 <RCC>
   <qresource prefix="/plugins/DICT/">
     <file>icon.png</file>
+    <file>icon_folio.png</file>
     <file>config.png</file>
     <file>images/logo_oslandia.png</file>
     <file>images/logo_megeve.jpg</file>

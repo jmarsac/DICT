@@ -36,6 +36,7 @@ from .DICT_dialog import DICTDialog
 from .DICT_dialog_config import DICTDialogConfig
 from .DICT_xml import DICT_xml
 from .fdf_buffer import FdfBuffer
+from .folio_map_tool import FolioMapTool
 
 import os
 import sys
@@ -204,6 +205,15 @@ class DICT(object):
             callback = self.runHelp,
             parent = self.iface.mainWindow(),
             add_to_toolbar = False)
+
+        icon_folio_path = ':/plugins/DICT/icon_folio.png'
+        self.add_action(
+            icon_folio_path,
+            text=self.tr(u'Placer folio'),
+            callback=self.place_folio_tool,
+            parent=self.iface.mainWindow(),
+            add_to_toolbar=True,
+            add_to_menu=True)
 
         firstUse = QSettings().value("DICT/isFirstUse" , 1, type = int)
         if firstUse == 1:
@@ -614,3 +624,12 @@ class DICT(object):
         else:
             opener ="open" if sys.platform == "darwin" else "xdg-open"
             subprocess.call([opener, fullfilename])
+
+    def place_folio_tool(self):
+        # Create the map tool using the canvas reference
+        self.pointTool = FolioMapTool(self.iface.mapCanvas())
+        self.iface.mapCanvas().setMapTool(self.pointTool)
+
+    def create_folio(self,point,button):
+        print("create_folio")
+        # TODO : creation folio sur couche temporaire
