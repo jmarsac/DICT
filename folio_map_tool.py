@@ -58,7 +58,7 @@ class FolioMapTool(QgsMapToolEmitPoint):
     def reset(self):
         self.startPoint = QgsPointXY(0,0)
         self.isEmittingPoint = True
-        self.rotation = 0
+        self.__zRotation = 0
         self.step = 1
 
     '''
@@ -77,7 +77,7 @@ class FolioMapTool(QgsMapToolEmitPoint):
 
     def canvasReleaseEvent(self, e):
         if e.button() == Qt.RightButton:
-            self.rotation = 0
+            self.__zRotation = 0
             if self.step == 2:
                 self.step = 3
             else:
@@ -85,10 +85,10 @@ class FolioMapTool(QgsMapToolEmitPoint):
         else:
             if self.step == 1:
                 self.startPoint = self.toMapCoordinates(e.pos())
-                self.rotation = 0
+                self.__zRotation = 0
                 self.step = 2
             elif self.step == 2:
-                self.rotation = self.startPoint.azimuth(self.toMapCoordinates(e.pos()))
+                self.__zRotation = self.startPoint.azimuth(self.toMapCoordinates(e.pos()))
                 self.step = 3
             elif self.step == 3:
                 self.folio_geometry.addFolio(self._geom, self.__printScale, self.__layoutName, self.__zRotation )
@@ -103,7 +103,7 @@ class FolioMapTool(QgsMapToolEmitPoint):
         else:
             self.startPoint = self.toMapCoordinates(e.pos())
 
-        self.showRect(self.startPoint, self.__sizePoint, self.zRotation)
+        self.showRect(self.startPoint, self.__sizePoint, self.__zRotation)
 
     def showRect(self, startPoint, sizePoint, rotation):
         self.rubberBand.reset(QgsWkbTypes.PolygonGeometry)

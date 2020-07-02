@@ -74,6 +74,22 @@ class FolioGeometry(object):
             fields.append(QgsField("z_rotation", QVariant.Double ))
             self.__memLayer = QgsVectorLayer(vl, layer_name, "memory")
             self.__memLayer.dataProvider().addAttributes(fields.toList())
+
+			# set Folios feature id as label on frame center 
+            pal_layer = QgsPalLayerSettings()
+            pal_layer.fieldName = '$id'
+            pal_layer.isExpression = True
+            pal_layer.enabled = True
+            pal_layer.placement = QgsPalLayerSettings.OverPoint
+            prop_coll = QgsPropertyCollection("properties")
+            prop = QgsProperty()
+            prop.setField("z_rotation")
+            prop_coll.setProperty(QgsPalLayerSettings.LabelRotation, prop)
+            print(prop_coll.property(QgsPalLayerSettings.LabelRotation))
+            pal_layer.setDataDefinedProperties(prop_coll)
+            labels = QgsVectorLayerSimpleLabeling(pal_layer)
+            self.__memLayer.setLabeling(labels)
+            self.__memLayer.setLabelsEnabled(True)
             QgsProject.instance().addMapLayer(self.__memLayer)
 
 
