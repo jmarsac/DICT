@@ -80,6 +80,9 @@ class FolioMapTool(QgsMapToolEmitPoint):
             self.__zRotation = 0
             if self.step == 2:
                 self.step = 3
+                self.showRect(self.startPoint, self.__sizePoint, self.__zRotation)
+                self.folio_geometry.addFolio(self._geom, self.__printScale, self.__layoutName, self.__zRotation )
+                self.rubberBand.reset(QgsWkbTypes.PolygonGeometry)
             else:
                 self.step = 1
         else:
