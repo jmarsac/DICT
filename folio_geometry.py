@@ -85,11 +85,11 @@ class FolioGeometry(object):
             prop = QgsProperty()
             prop.setField("z_rotation")
             prop_coll.setProperty(QgsPalLayerSettings.LabelRotation, prop)
-            print(prop_coll.property(QgsPalLayerSettings.LabelRotation))
             pal_layer.setDataDefinedProperties(prop_coll)
             labels = QgsVectorLayerSimpleLabeling(pal_layer)
             self.__memLayer.setLabeling(labels)
             self.__memLayer.setLabelsEnabled(True)
+
             QgsProject.instance().addMapLayer(self.__memLayer)
 
 
