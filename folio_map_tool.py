@@ -40,7 +40,7 @@ class FolioMapTool(QgsMapToolEmitPoint):
     def __init__(self, canvas, size_x=0.200, size_y=0.280, print_scale=200):
         self.canvas = canvas
         QgsMapToolEmitPoint.__init__(self, self.canvas)
-        self.rubberBand = QgsRubberBand(self.canvas, True)
+        self.rubberBand = QgsRubberBand(self.canvas, QgsWkbTypes.PolygonGeometry)
         self.rubberBand.setStrokeColor(Qt.black)
         self.rubberBand.setWidth(2)
         self.startPoint = QgsPointXY(0, 0)
@@ -123,5 +123,6 @@ class FolioMapTool(QgsMapToolEmitPoint):
         self.rubberBand.show()
 
     def deactivate(self):
+        self.rubberBand.reset(QgsWkbTypes.PolygonGeometry)
         QgsMapTool.deactivate(self)
         self.deactivated.emit()
