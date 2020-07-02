@@ -37,7 +37,7 @@ class FolioMapTool(QgsMapToolEmitPoint):
     step 3: positionner définitivement le folio
     '''
 
-    def __init__(self, canvas, size_x=0.200, size_y=0.280, map_scale=200):
+    def __init__(self, canvas, size_x=0.200, size_y=0.280, print_scale=200):
         self.canvas = canvas
         QgsMapToolEmitPoint.__init__(self, self.canvas)
         self.rubberBand = QgsRubberBand(self.canvas, True)
@@ -47,8 +47,10 @@ class FolioMapTool(QgsMapToolEmitPoint):
         '''
         TODO: use external layout frame definition (from .qpt)
         '''
-        self.map_scale = map_scale
-        self.sizePoint = QgsPointXY(size_x * map_scale, size_y * map_scale)
+        self.__printScale = print_scale
+        self.__sizePoint = QgsPointXY(size_x * print_scale, size_y * print_scale)
+        self.__layoutName = 'A4-Paysage'
+        self.__zRotation = 0.0
         self.folio_geometry = FolioGeometry()
 
         self.reset()
@@ -89,7 +91,7 @@ class FolioMapTool(QgsMapToolEmitPoint):
                 self.rotation = self.startPoint.azimuth(self.toMapCoordinates(e.pos()))
                 self.step = 3
             elif self.step == 3:
-                self.folio_geometry.addFolio(self._geom)
+                self.folio_geometry.addFolio(self._geom, self.__printScale, self.__layoutName, self.__zRotation )
                 self.rubberBand.reset(QgsWkbTypes.PolygonGeometry)
 
     def canvasMoveEvent(self, e):
@@ -97,20 +99,21 @@ class FolioMapTool(QgsMapToolEmitPoint):
             return
 
         if self.step == 2:
-            self.rotation = self.startPoint.azimuth(self.toMapCoordinates(e.pos()))
+            self.__zRotation = self.startPoint.azimuth(self.toMapCoordinates(e.pos()))
         else:
             self.startPoint = self.toMapCoordinates(e.pos())
 
-        self.showRect(self.startPoint, self.sizePoint, self.rotation)
+        self.showRect(self.startPoint, self.__sizePoint, self.zRotation)
 
     def showRect(self, startPoint, sizePoint, rotation):
         self.rubberBand.reset(QgsWkbTypes.PolygonGeometry)
 
-        endPoint = QgsPointXY(startPoint.x() + self.sizePoint.x(), startPoint.y() + self.sizePoint.y())
+        endPoint = QgsPointXY(startPoint.x() + self.__sizePoint.x(), startPoint.y() + self.__sizePoint.y())
 
         rect = QgsRectangle(self.startPoint, endPoint)
         self._geom = QgsGeometry.fromRect(rect)
-        self._geom.rotate(self.rotation, self.startPoint)
+
+        self._geom.rotate(self.__zRotation, self.startPoint)
         vertices = self._geom.vertices()
         while vertices.hasNext():
             pt = QgsPointXY(vertices.next())

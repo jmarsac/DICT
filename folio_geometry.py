@@ -68,12 +68,16 @@ class FolioGeometry(object):
     def __addFoliosLayer(self, layer_name):
         if self.__memLayer is None:
             vl = "polygon?crs=epsg:" + str(self._epsg) + "&index=yes"
+            fields = QgsFields()
+            fields.append(QgsField("layout", QVariant.String ))
+            fields.append(QgsField("print_scale", QVariant.Int ))
+            fields.append(QgsField("z_rotation", QVariant.Double ))
             self.__memLayer = QgsVectorLayer(vl, layer_name, "memory")
+            self.__memLayer.dataProvider().addAttributes(fields.toList())
             QgsProject.instance().addMapLayer(self.__memLayer)
 
 
-    def addFolio(self, geom):
-        print('add geometry', self.__memLayer)
+    def addFolio(self, geom, print_scale, layout, z_rotation):
         if self.__memLayer is None:
             self.__addFoliosLayer(self.__layerName)
 
@@ -83,9 +87,12 @@ class FolioGeometry(object):
         nb = 0
         self._features.clear()
         self._features.append(QgsFeature())
+        self._features[0].initAttributes(3)
+        self._features[0].setAttribute(0, layout)
+        self._features[0].setAttribute(1, print_scale)
+        self._features[0].setAttribute(2, z_rotation)
         self._features[nb].setGeometry(geom)
         nb += 1
-        print('add geometry', self._features)
 
         pr.addFeatures(self._features)
         self.__memLayer.commitChanges()
