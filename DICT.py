@@ -26,7 +26,7 @@ from PyQt5.QtCore import (QSettings, QTranslator, qVersion,
 from PyQt5.QtWidgets import QAction, QMessageBox, QDialog
 from PyQt5.QtGui import QIcon, QDesktopServices
 
-from qgis.core import Qgis
+from qgis.core import Qgis, QgsPointXY
 
 # Initialize Qt resources from file resources.py
 from . import resources
@@ -35,6 +35,7 @@ from .DICT_about import DICTAbout
 from .DICT_dialog import DICTDialog
 from .DICT_dialog_config import DICTDialogConfig
 from .DICT_xml import DICT_xml
+from .dict_layout import DictLayout
 from .fdf_buffer import FdfBuffer
 from .folio_map_tool import FolioMapTool
 
@@ -626,10 +627,10 @@ class DICT(object):
             subprocess.call([opener, fullfilename])
 
     def place_folio_tool(self):
+        dict_layout = DictLayout()
+        dict_layout.loadLayouts()
+        size = dict_layout.folioPrintSize()
         # Create the map tool using the canvas reference
-        self.pointTool = FolioMapTool(self.iface.mapCanvas())
+        self.pointTool = FolioMapTool(self.iface.mapCanvas(), size.x(), size.y())
         self.iface.mapCanvas().setMapTool(self.pointTool)
 
-    def create_folio(self,point,button):
-        print("create_folio")
-        # TODO : creation folio sur couche temporaire
