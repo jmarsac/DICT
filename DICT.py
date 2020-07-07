@@ -454,9 +454,18 @@ class DICT(object):
             # update dialog infos
             self.dlg.labelType_demande.setText(self.__dtdict.xml_demande.dictionnaire()["type_demande"])
             self.dlg.labelNo_teleservice.setText(self.__dtdict.xml_demande.dictionnaire()["no_teleservice"])
-            self.dlg.labelAdresse_travaux.setText(self.__dtdict.xml_demande.dictionnaire()["tvx_adresse"])
-            self.dlg.labelCommune_travaux.setText(self.__dtdict.xml_demande.dictionnaire()["tvx_commune"])
-            self.dlg.labelDescription_travaux.setText(self.__dtdict.xml_demande.dictionnaire()["tvx_description"])
+            if "tvx_adresse" in self.dicoDeclarant():
+                self.dlg.labelAdresse_travaux.setText(self.__dtdict.xml_demande.dictionnaire()["tvx_adresse"])
+            else:
+                self.dlg.labelAdresse_travaux.setText("")
+            if "tvx_commune" in self.dicoDeclarant():
+                self.dlg.labelCommune_travaux.setText(self.__dtdict.xml_demande.dictionnaire()["tvx_commune"])
+            else:
+                self.dlg.labelCommune_travaux.setText("")
+            if "tvx_description" in self.dicoDeclarant():
+                self.dlg.labelDescription_travaux.setText(self.__dtdict.xml_demande.dictionnaire()["tvx_description"])
+            else:
+                self.dlg.labelDescription_travaux.setText("")
 
             if "taille_des_plans" in self.dicoDeclarant():
                 print( self.dicoDeclarant()["taille_des_plans"])
