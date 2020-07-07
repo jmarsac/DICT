@@ -2,7 +2,10 @@
   <qresource prefix="/plugins/DICT/">
     <file>icon.png</file>
     <file>icon_folio.png</file>
+    <file>icon_maps.png</file>
     <file>icon_ta.png</file>
+    <file>icon_edit_form.png</file>
+    <file>icon_clean_canvas.png</file>
     <file>config.png</file>
     <file>images/logo_oslandia.png</file>
     <file>images/logo_megeve.jpg</file>

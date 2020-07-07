@@ -264,6 +264,110 @@
     </item>
    </widget>
   </widget>
+  <widget class="QToolButton" name="toolButtonPlaceFolio">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>250</y>
+     <width>40</width>
+     <height>40</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Placer folio</string>
+   </property>
+   <property name="text">
+    <string>FO</string>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>icon_folio.png</normaloff>icon_folio.png</iconset>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>32</width>
+     <height>32</height>
+    </size>
+   </property>
+  </widget>
+  <widget class="QToolButton" name="toolButtonEditForm">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>250</y>
+     <width>40</width>
+     <height>40</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>&lt;p&gt;Editer le formulaire Cerfa&lt;/p&gt;</string>
+   </property>
+   <property name="text">
+    <string>ED</string>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>icon_form_cerfa.png</normaloff>icon_form_cerfa.png</iconset>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>32</width>
+     <height>32</height>
+    </size>
+   </property>
+  </widget>
+  <widget class="QToolButton" name="toolButtonCleanCanvas">
+   <property name="geometry">
+    <rect>
+     <x>220</x>
+     <y>250</y>
+     <width>40</width>
+     <height>40</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>&lt;p&gt;Purger&lt;/p&gt;</string>
+   </property>
+   <property name="text">
+    <string>PU</string>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>icon_purge.png</normaloff>icon_purge.png</iconset>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>32</width>
+     <height>32</height>
+    </size>
+   </property>
+  </widget>
+  <widget class="QToolButton" name="toolButtonCreateMaps">
+   <property name="geometry">
+    <rect>
+     <x>100</x>
+     <y>250</y>
+     <width>40</width>
+     <height>40</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>&lt;p&gt;Créer plans PDF&lt;/p&gt;</string>
+   </property>
+   <property name="text">
+    <string>ED</string>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>icon_maps.png</normaloff>icon_maps.png</iconset>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>32</width>
+     <height>32</height>
+    </size>
+   </property>
+  </widget>
  </widget>
  <tabstops>
   <tabstop>lineEdit</tabstop>
