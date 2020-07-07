@@ -237,7 +237,16 @@ class DICT(object):
 
     def run(self):
         """Run method that performs all the real work"""
+        self.dlg.setWindowFlags(Qt.WindowStaysOnTopHint)
+        # set buttons icons
+        if True:
+            self.dlg.toolButtonPlaceFolio.setIcon(QIcon(':/plugins/DICT/icon_folio.png'))
+            self.dlg.toolButtonCreateMaps.setIcon(QIcon(':/plugins/DICT/icon_maps.png'))
+            self.dlg.toolButtonEditForm.setIcon(QIcon(':/plugins/DICT/icon_edit_form.png'))
+            self.dlg.toolButtonCleanCanvas.setIcon(QIcon(':/plugins/DICT/icon_clean_canvas.png'))
+
         # connect signals
+        self.dlg.toolButtonPlaceFolio.clicked.connect(self.place_folio_tool)
         self.dlg.lineEdit.textChanged.connect(self.on_lineedit_text_changed)
         self.dlg.comboBoxLayout.currentTextChanged.connect(self.on_comboboxlayout_text_changed)
 
