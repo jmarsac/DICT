@@ -88,6 +88,10 @@ class DICT(object):
         self.toolbar = self.iface.addToolBar('DICT')
         self.toolbar.setObjectName('DICT')
 
+        # Layouts
+        self.__dict_layout = DictLayout()
+        self.__dict_layout.loadLayouts(self.dlg.comboBoxLayout)
+
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
         """Get the translation for a string using Qt translation API.
@@ -233,283 +237,338 @@ class DICT(object):
 
     def run(self):
         """Run method that performs all the real work"""
+        # connect signals
+        self.dlg.lineEdit.textChanged.connect(self.on_lineedit_text_changed)
+        self.dlg.comboBoxLayout.currentTextChanged.connect(self.on_comboboxlayout_text_changed)
+
+        # show the dialog
+        self.dlg.show()
+
+        # output files names prefix and suffix
+        self.__prefix = QSettings().value("/DICT/prefRecep") + "-" if QSettings().value("/DICT/prefRecep") != "" else ""
+        self.__suffix = "-" + QSettings().value("/DICT/sufRecep") if QSettings().value("/DICT/sufRecep") != "" else ""
+        # exploitant infos
+        self.__dico_exploitant = dict()
+
+        # Raison sociale exploitant
+        if QSettings().value("/DICT/coordDenom"):
+            self.__dico_exploitant["RaisonSocialeExploitant"] = QSettings().value("/DICT/coordDenom")
+        # Contact exploitant
+        if QSettings().value("/DICT/coordPersonne"):
+            self.__dico_exploitant["ContactExploitant"] = QSettings().value("/DICT/coordPersonne")
+        # N° et voie exploitant
+        if QSettings().value("/DICT/coordNumVoie"):
+            self.__dico_exploitant["NoVoieExploitant"] = QSettings().value("/DICT/coordNumVoie")
+        # Lieu-dit / boite postale exploitant
+        if QSettings().value("/DICT/coordBP"):
+            self.__dico_exploitant["LieuditBPExploitant"] = QSettings().value("/DICT/coordBP")
+        # Code postal exploitant
+        if QSettings().value("/DICT/coordCP"):
+            self.__dico_exploitant["CodePostalExploitant"] = QSettings().value("/DICT/coordCP")
+        # Commune exploitant
+        if QSettings().value("/DICT/coordCommune"):
+            self.__dico_exploitant["CommuneExploitant"] = QSettings().value("/DICT/coordCommune")
+        # N° téléphone exploitant
+        if QSettings().value("/DICT/coordTel"):
+            self.__dico_exploitant["TelExploitant"] = QSettings().value("/DICT/coordTel")
+        # N° fax exploitant
+        if QSettings().value("/DICT/coordFax"):
+            self.__dico_exploitant["FaxExploitant"] = QSettings().value("/DICT/coordFax")
+        # Catégorie du 1er réseau (ex: EL)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["CategorieReseau1"] = QSettings().value("/DICT/yyy")
+        # Catégorie du 2ème réseau (ex: EL)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["CategorieReseau2"] = QSettings().value("/DICT/yyy")
+        # Catégorie du 3ème réseau (ex: EL)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["CategorieReseau3"] = QSettings().value("/DICT/yyy")
+        # Représentant exploitant
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["RepresentantExploitant"] = QSettings().value("/DICT/yyy")
+        # N° téléphone représentant
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["TelModification"] = QSettings().value("/DICT/yyy")
+        # Plans joints (Off/Oui)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["PlansJoints"] = QSettings().value("/DICT/yyy")
+        # Référence n° 1
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["Ref1"] = QSettings().value("/DICT/yyy")
+        # echelle plan n° 1
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["Echelle1"] = QSettings().value("/DICT/yyy")
+        # Jour d'édition du plan n° 1 (ex: 11)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["JourEditionPlan1"] = QSettings().value("/DICT/yyy")
+        # Mois d'édition du plan n° 1 (ex: 11)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["MoisEditionPlan1"] = QSettings().value("/DICT/yyy")
+        # Année d'édition du plan n° 1 (ex: 2011)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["AnneeEdition1"] = QSettings().value("/DICT/yyy")
+        # Réseau sensible sur plan n° 1 (Off/Oui)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["Sensible1"] = QSettings().value("/DICT/yyy")
+        # Profondeur réseau sur plan n° 1 (ex: 60)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["Profondeur1"] = QSettings().value("/DICT/yyy")
+        # Matériau réseau sur plan n° 1 (ex: PE)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["Materiau1"] = QSettings().value("/DICT/yyy")
+        # Référence n° 2
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["Ref2"] = QSettings().value("/DICT/yyy")
+        # Echelle plan n° 2
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["Echelle2"] = QSettings().value("/DICT/yyy")
+        # Jour d'édition du plan n° (ex: 12)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["JourEditionPlan2"] = QSettings().value("/DICT/yyy")
+        # Mois d'édition du plan n° (ex: 12)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["MoisEditionPlan2"] = QSettings().value("/DICT/yyy")
+        # Année d'édition du plan n° (ex: 2012)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["AnneeEdition2"] = QSettings().value("/DICT/yyy")
+        # Réseau sensible sur plan n° 2 (Off/Oui)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["Sensible2"] = QSettings().value("/DICT/yyy")
+        # Profondeur réseau sur plan n° 2 (ex: 62)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["Profondeur2"] = QSettings().value("/DICT/yyy")
+        # Matériau réseau sur plan n° 2 (ex: PVC)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["Materiau2"] = QSettings().value("/DICT/yyy")
+        # Case réunion chantier (Off/Oui)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["ReunionChantierCase"] = QSettings().value("/DICT/yyy")
+        # Rendez-vous d'un commun accord (Off/Oui)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["DateRDV"] = QSettings().value("/DICT/yyy")
+        # Jour de la réunion (ex: 11)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["JourReunion"] = QSettings().value("/DICT/yyy")
+        # Mois e la réunion (ex: 11)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["MoisReunion"] = QSettings().value("/DICT/yyy")
+        # Année de la réunion (ex: 2011)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["AnneeReunion"] = QSettings().value("/DICT/yyy")
+        # Heure de la réunion (ex: 11)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["HeureReunion"] = QSettings().value("/DICT/yyy")
+        # Date rdv à l'initiative du déclarant (Off/Oui)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["RDVparDeclarant"] = QSettings().value("/DICT/yyy")
+        # Jour appel non concluant (ex: 12)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["AppelNonConcl_Jour"] = QSettings().value("/DICT/yyy")
+        # Mois appel non concluant (ex: 12)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["AppelNonConcl_Mois"] = QSettings().value("/DICT/yyy")
+        # Année appel non concluant (ex: 2012)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["AppelNonConcl_Annee"] = QSettings().value("/DICT/yyy")
+        # Case respecter servitude (Off/Oui)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["ServitudeCase"] = QSettings().value("/DICT/yyy")
+        # Pas uniquement classe A; prévoir investigations supplémentaires (Off/Oui)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["PasClasseACase"] = QSettings().value("/DICT/yyy")
+        # Branchement sur réseau enterré (Off/Oui)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["BranchementsCase"] = QSettings().value("/DICT/yyy")
+        # Recommandations techniques spécifiques
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["Recommandations"] = QSettings().value("/DICT/yyy")
+        # Rubriques guide technique
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["RubriquesGuide"] = QSettings().value("/DICT/yyy")
+        # Mise hors tension (HT_Impossible / HT_Possible)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["MiseHorsTension"] = QSettings().value("/DICT/yyy")
+        # Mesures de sécurité
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["MesuresSecurite"] = QSettings().value("/DICT/yyy")
+        # Mesures de sécurité 2ème ligne
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["MesuresSecurite2"] = QSettings().value("/DICT/yyy")
+        # Dispositif de sécurité(Voir la liste .../Voir la localisation sur.../Aucun dans l'emprise)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["DispositifsSecurite"] = QSettings().value("/DICT/yyy")
+        # N° SDIS
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["Endommagement"] = QSettings().value("/DICT/yyy")
+        # Responsable du dossier
+        if QSettings().value("/DICT/respNom"):
+            self.__dico_exploitant["NomResponsableDossier"] = QSettings().value("/DICT/respNom")
+        # Service (ex: Cartographie)
+        if QSettings().value("/DICT/respService"):
+            self.__dico_exploitant["DésignationService"] = QSettings().value("/DICT/respService")
+        # N° téléphone responsable du dossier
+        if QSettings().value("/DICT/respTel"):
+            self.__dico_exploitant["TelResponsableDossier"] = QSettings().value("/DICT/respTel")
+        # Catégorie du 1er réseau (ex: EL)
+        if QSettings().value("/DICT/yyy"):
+            self.__dico_exploitant["CategorieReseau1"] = QSettings().value("/DICT/yyy")
+        # Nom du signataire
+        if QSettings().value("/DICT/signNom"):
+            self.__dico_exploitant["NomSignataire"] = QSettings().value("/DICT/signNom")
+        # N° téléphone en cas de dégradation
+        if QSettings().value("/DICT/TelEndommagement"):
+            self.__dico_exploitant["TelEndommagement"] = QSettings().value("/DICT/TelEndommagement")
+
+    def searchPreferredMpSizeLayout(self, map_size, combo_box):
+        for i in range(0, combo_box.count()):
+            name = combo_box.itemText(i)
+            if map_size.upper() in name:
+                combo_box.setCurrentIndex(i)
+
+    def on_comboboxlayout_text_changed(self):
+        if len(self.dlg.comboBoxLayout.currentText()) > 0:
+            self.__dict_layout.setCurrentLayoutByName(self.dlg.comboBoxLayout.currentText())
+
+    def on_lineedit_text_changed(self):
+        titre = ""
+        pdf = ""
+        planPDF = []
+        msgBox = QMessageBox()
+        msgBox.setTextFormat(Qt.RichText)
+        if len(self.dlg.lineEdit.text()) > 0:
+            self.__dtdict = DICT_xml(self.dlg.lineEdit.text())
+
+            filename = self.prefix() + self.__dtdict.xml_demande.type_demande() \
+                       + "-" + self.__dtdict.xml_demande.no_teleservice() \
+                       + self.__suffix
+            self.titre = filename
+
+            self.fdf_buffer = FdfBuffer()
+            self.fdf_buffer.open(filename + ".pdf")
+            type_demande = self.__dtdict.xml_demande.dictionnaire()["type_demande"]
+            self.fdf_buffer.add_checkbox_value(type_demande == "DT", "Recepisse_DT")
+            self.fdf_buffer.add_checkbox_value(type_demande == "DICT", "Recepisse_DICT")
+            self.fdf_buffer.add_checkbox_value(type_demande == "DC", "Recepisse_DC")
+            self.fdf_buffer.add_text_value(self.__dtdict.xml_demande.dictionnaire()["no_teleservice"], "NoGU")
+
+            # update dialog infos
+            self.dlg.labelType_demande.setText(self.__dtdict.xml_demande.dictionnaire()["type_demande"])
+            self.dlg.labelNo_teleservice.setText(self.__dtdict.xml_demande.dictionnaire()["no_teleservice"])
+            self.dlg.labelAdresse_travaux.setText(self.__dtdict.xml_demande.dictionnaire()["tvx_adresse"])
+            self.dlg.labelCommune_travaux.setText(self.__dtdict.xml_demande.dictionnaire()["tvx_commune"])
+            self.dlg.labelDescription_travaux.setText(self.__dtdict.xml_demande.dictionnaire()["tvx_description"])
+
+            if "taille_des_plans" in self.dicoDeclarant():
+                print( self.dicoDeclarant()["taille_des_plans"])
+                self.searchPreferredMpSizeLayout( self.dicoDeclarant()["taille_des_plans"], self.dlg.comboBoxLayout)
+
+            if "RaisonSocialeExploitant" in self.__dico_exploitant:
+                self.fdf_buffer.add_text_value(self.__dico_exploitant["RaisonSocialeExploitant"], "RaisonSocialeExploitant")
+            if "ContactExploitant" in self.__dico_exploitant:
+                self.fdf_buffer.add_text_value(self.__dico_exploitant["ContactExploitant"], "ContactExploitant")
+            if "NoVoieExploitant" in self.__dico_exploitant:
+                self.fdf_buffer.add_text_value(self.__dico_exploitant["NoVoieExploitant"], "NoVoieExploitant")
+            if "LieuditBPExploitant" in self.__dico_exploitant:
+                self.fdf_buffer.add_text_value(self.__dico_exploitant["LieuditBPExploitant"], "LieuditBPExploitant")
+            if "CodePostalExploitant" in self.__dico_exploitant:
+                self.fdf_buffer.add_text_value(self.__dico_exploitant["CodePostalExploitant"], "CodePostalExploitant")
+            if "CommuneExploitant" in self.__dico_exploitant:
+                self.fdf_buffer.add_text_value(self.__dico_exploitant["CommuneExploitant"], "CommuneExploitant")
+            if "TelExploitant" in self.__dico_exploitant:
+                self.fdf_buffer.add_text_value(self.__dico_exploitant["TelExploitant"], "TelExploitant")
+            if "FaxExploitant" in self.__dico_exploitant:
+                self.fdf_buffer.add_text_value(self.__dico_exploitant["FaxExploitant"], "FaxExploitant")
+            if "CategorieReseau1" in self.__dico_exploitant:
+                self.fdf_buffer.add_text_value(self.__dico_exploitant["CategorieReseau1"], "CategorieReseau1")
+            if "RepresentantExploitant" in self.__dico_exploitant:
+                self.fdf_buffer.add_text_value(self.__dico_exploitant["RepresentantExploitant"], "RepresentantExploitant")
+            if "TelModification" in self.__dico_exploitant:
+                self.fdf_buffer.add_text_value(self.__dico_exploitant["TelModification"], "TelModification")
+            if "TelEndommagement" in self.__dico_exploitant:
+                self.fdf_buffer.add_text_value(self.__dico_exploitant["TelEndommagement"], "TelEndommagement")
+            if "Endommagement" in self.__dico_exploitant:
+                self.fdf_buffer.add_text_value(self.__dico_exploitant["Endommagement"], "Endommagement")
+            if "NomResponsableDossier" in self.__dico_exploitant:
+                self.fdf_buffer.add_text_value(self.__dico_exploitant["NomResponsableDossier"], "NomResponsableDossier")
+            if "DésignationService" in self.__dico_exploitant:
+                self.fdf_buffer.add_text_value(self.__dico_exploitant["DésignationService"], "DésignationService")
+            if "TelResponsableDossier" in self.__dico_exploitant:
+                self.fdf_buffer.add_text_value(self.__dico_exploitant["TelResponsableDossier"], "TelResponsableDossier")
+            if "NomSignataire" in self.__dico_exploitant:
+                self.fdf_buffer.add_text_value(self.__dico_exploitant["NomSignataire"], "NomSignataire")
+
+
+            # declarant infos
+            self.__dico_declarant = self.__dtdict.xml_demande.dictionnaire()
+
+            if "no_teleservice" in self.__dico_declarant:
+                self.fdf_buffer.add_text_value(self.__dico_declarant["no_teleservice"], "NoGU")
+            if "dec_denomination" in self.__dico_declarant:
+                self.fdf_buffer.add_text_value(self.__dico_declarant["dec_denomination"], "Denomination")
+            if "dec_adresse2" in self.__dico_declarant:
+                self.fdf_buffer.add_text_value(self.__dico_declarant["dec_adresse2"], "ComplementAdresse")
+            if "dec_no_voie" in self.__dico_declarant and "dec_voie" in self.__dico_declarant:
+                self.fdf_buffer.add_text_value(self.__dico_declarant["dec_no_voie"] + " " + self.__dico_declarant["dec_voie"], "NoVoie")
+            elif "dec_voie" in self.__dico_declarant:
+                self.fdf_buffer.add_text_value(self.__dico_declarant["dec_voie"], "NoVoie")
+            if "dec_lieudit_bp" in self.__dico_declarant:
+                self.fdf_buffer.add_text_value(self.__dico_declarant["dec_lieudit_bp"], "LieuditBP")
+            if "dec_code_postal" in self.__dico_declarant:
+                self.fdf_buffer.add_text_value(self.__dico_declarant["dec_code_postal"], "CodePostal")
+            if "dec_commune" in self.__dico_declarant:
+                self.fdf_buffer.add_text_value(self.__dico_declarant["dec_commune"], "Commune")
+            if "dec_pays" in self.__dico_declarant:
+                self.fdf_buffer.add_text_value(self.__dico_declarant["dec_pays"], "Pays")
+            if "dec_affaire" in self.__dico_declarant:
+                self.fdf_buffer.add_text_value(self.__dico_declarant["dec_affaire"], "NoAffaireDeclarant")
+            if "dec_contact" in self.__dico_declarant:
+                self.fdf_buffer.add_text_value(self.__dico_declarant["dec_contact"], "Personne_Contacter")
+            if "declaration_at" in self.__dico_declarant:
+                declaration_at = dateutil.parser.isoparse(self.__dico_declarant["declaration_at"])
+
+                self.fdf_buffer.add_text_value(declaration_at.strftime("%d"), "JourReception")
+                self.fdf_buffer.add_text_value(declaration_at.strftime("%m"), "MoisReception")
+                self.fdf_buffer.add_text_value(declaration_at.strftime("%Y"), "AnneeReception")
+            if "tvx_commune" in self.__dico_declarant:
+                self.fdf_buffer.add_text_value(self.__dico_declarant["tvx_commune"], "CommuneTravaux")
+            if "tvx_adresse" in self.__dico_declarant:
+                self.fdf_buffer.add_text_value(self.__dico_declarant["tvx_adresse"], "AdresseTravaux")
+
+            self.fdf_buffer.add_text_value(datetime.date.today().strftime("%d"), "JourRecepisse")
+            self.fdf_buffer.add_text_value(datetime.date.today().strftime("%m"), "MoisRecepisse")
+            self.fdf_buffer.add_text_value(datetime.date.today().strftime("%Y"), "AnneeRecepisse")
+
+            self.fdf_buffer.close()
+
+    def setPrefix(self, prefix):
+        self.__prefix = prefix
+
+    def prefix(self):
+        return self.__prefix
+
+    def suffix(self):
+        return self.__suffix
+
+    def dtDict(self):
+        return self.__dtdict
+
+    def dicoExploitant(self):
+        return self.__dico_exploitant
+
+    def dicoDeclarant(self):
+        return self.dtDict().xml_demande.dictionnaire()
+
+    def run2(self):
+        """Run method that performs all the real work"""
+        print("run2")
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop
         result = self.dlg.exec_()
         # See if OK was pressed
         if result:
-            titre = ""
-            pdf = ""
-            planPDF = []
-            msgBox = QMessageBox()
-            msgBox.setTextFormat(Qt.RichText)
-            dtdict = DICT_xml(self.dlg.lineEdit.text())
 
-            prefix = QSettings().value("/DICT/prefRecep") + "-" if QSettings().value("/DICT/prefRecep") != "" else ""
-            suffix = "-" + QSettings().value("/DICT/sufRecep") if QSettings().value("/DICT/sufRecep") != "" else ""
-            filename = prefix + dtdict.xml_demande.type_demande() \
-                       + "-" + dtdict.xml_demande.no_teleservice()\
-                       + suffix
-            titre = filename
 
-            self.fdf_buffer = FdfBuffer()
-            self.fdf_buffer.open(filename + ".pdf")
-            type_demande = dtdict.xml_demande.dictionnaire()["type_demande"]
-            self.fdf_buffer.add_checkbox_value(type_demande == "DT", "Recepisse_DT")
-            self.fdf_buffer.add_checkbox_value(type_demande == "DICT", "Recepisse_DICT")
-            self.fdf_buffer.add_checkbox_value(type_demande == "DC", "Recepisse_DC")
-            self.fdf_buffer.add_text_value(dtdict.xml_demande.dictionnaire()["no_teleservice"], "NoGU")
-
-            # exploitant infos
-            dico_exploitant = dict()
-
-            # Raison sociale exploitant
-            if QSettings().value("/DICT/coordDenom"):
-                dico_exploitant["RaisonSocialeExploitant"] = QSettings().value("/DICT/coordDenom")
-            # Contact exploitant
-            if QSettings().value("/DICT/coordPersonne"):
-                dico_exploitant["ContactExploitant"] = QSettings().value("/DICT/coordPersonne")
-            # N° et voie exploitant
-            if QSettings().value("/DICT/coordNumVoie"):
-                dico_exploitant["NoVoieExploitant"] = QSettings().value("/DICT/coordNumVoie")
-            # Lieu-dit / boite postale exploitant
-            if QSettings().value("/DICT/coordBP"):
-                dico_exploitant["LieuditBPExploitant"] = QSettings().value("/DICT/coordBP")
-            # Code postal exploitant
-            if QSettings().value("/DICT/coordCP"):
-                dico_exploitant["CodePostalExploitant"] = QSettings().value("/DICT/coordCP")
-            # Commune exploitant
-            if QSettings().value("/DICT/coordCommune"):
-                dico_exploitant["CommuneExploitant"] = QSettings().value("/DICT/coordCommune")
-            # N° téléphone exploitant
-            if QSettings().value("/DICT/coordTel"):
-                dico_exploitant["TelExploitant"] = QSettings().value("/DICT/coordTel")
-            # N° fax exploitant
-            if QSettings().value("/DICT/coordFax"):
-                dico_exploitant["FaxExploitant"] = QSettings().value("/DICT/coordFax")
-            # Catégorie du 1er réseau (ex: EL)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["CategorieReseau1"] = QSettings().value("/DICT/yyy")
-            # Catégorie du 2ème réseau (ex: EL)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["CategorieReseau2"] = QSettings().value("/DICT/yyy")
-            # Catégorie du 3ème réseau (ex: EL)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["CategorieReseau3"] = QSettings().value("/DICT/yyy")
-            # Représentant exploitant
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["RepresentantExploitant"] = QSettings().value("/DICT/yyy")
-            # N° téléphone représentant
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["TelModification"] = QSettings().value("/DICT/yyy")
-            # Plans joints (Off/Oui)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["PlansJoints"] = QSettings().value("/DICT/yyy")
-            # Référence n° 1
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["Ref1"] = QSettings().value("/DICT/yyy")
-            # echelle plan n° 1
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["Echelle1"] = QSettings().value("/DICT/yyy")
-            # Jour d'édition du plan n° 1 (ex: 11)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["JourEditionPlan1"] = QSettings().value("/DICT/yyy")
-            # Mois d'édition du plan n° 1 (ex: 11)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["MoisEditionPlan1"] = QSettings().value("/DICT/yyy")
-            # Année d'édition du plan n° 1 (ex: 2011)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["AnneeEdition1"] = QSettings().value("/DICT/yyy")
-            # Réseau sensible sur plan n° 1 (Off/Oui)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["Sensible1"] = QSettings().value("/DICT/yyy")
-            # Profondeur réseau sur plan n° 1 (ex: 60)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["Profondeur1"] = QSettings().value("/DICT/yyy")
-            # Matériau réseau sur plan n° 1 (ex: PE)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["Materiau1"] = QSettings().value("/DICT/yyy")
-            # Référence n° 2
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["Ref2"] = QSettings().value("/DICT/yyy")
-            # Echelle plan n° 2
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["Echelle2"] = QSettings().value("/DICT/yyy")
-            # Jour d'édition du plan n° (ex: 12)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["JourEditionPlan2"] = QSettings().value("/DICT/yyy")
-            # Mois d'édition du plan n° (ex: 12)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["MoisEditionPlan2"] = QSettings().value("/DICT/yyy")
-            # Année d'édition du plan n° (ex: 2012)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["AnneeEdition2"] = QSettings().value("/DICT/yyy")
-            # Réseau sensible sur plan n° 2 (Off/Oui)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["Sensible2"] = QSettings().value("/DICT/yyy")
-            # Profondeur réseau sur plan n° 2 (ex: 62)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["Profondeur2"] = QSettings().value("/DICT/yyy")
-            # Matériau réseau sur plan n° 2 (ex: PVC)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["Materiau2"] = QSettings().value("/DICT/yyy")
-            # Case réunion chantier (Off/Oui)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["ReunionChantierCase"] = QSettings().value("/DICT/yyy")
-            # Rendez-vous d'un commun accord (Off/Oui)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["DateRDV"] = QSettings().value("/DICT/yyy")
-            # Jour de la réunion (ex: 11)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["JourReunion"] = QSettings().value("/DICT/yyy")
-            # Mois e la réunion (ex: 11)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["MoisReunion"] = QSettings().value("/DICT/yyy")
-            # Année de la réunion (ex: 2011)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["AnneeReunion"] = QSettings().value("/DICT/yyy")
-            # Heure de la réunion (ex: 11)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["HeureReunion"] = QSettings().value("/DICT/yyy")
-            # Date rdv à l'initiative du déclarant (Off/Oui)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["RDVparDeclarant"] = QSettings().value("/DICT/yyy")
-            # Jour appel non concluant (ex: 12)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["AppelNonConcl_Jour"] = QSettings().value("/DICT/yyy")
-            # Mois appel non concluant (ex: 12)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["AppelNonConcl_Mois"] = QSettings().value("/DICT/yyy")
-            # Année appel non concluant (ex: 2012)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["AppelNonConcl_Annee"] = QSettings().value("/DICT/yyy")
-            # Case respecter servitude (Off/Oui)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["ServitudeCase"] = QSettings().value("/DICT/yyy")
-            # Pas uniquement classe A; prévoir investigations supplémentaires (Off/Oui)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["PasClasseACase"] = QSettings().value("/DICT/yyy")
-            # Branchement sur réseau enterré (Off/Oui)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["BranchementsCase"] = QSettings().value("/DICT/yyy")
-            # Recommandations techniques spécifiques
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["Recommandations"] = QSettings().value("/DICT/yyy")
-            # Rubriques guide technique
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["RubriquesGuide"] = QSettings().value("/DICT/yyy")
-            # Mise hors tension (HT_Impossible / HT_Possible)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["MiseHorsTension"] = QSettings().value("/DICT/yyy")
-            # Mesures de sécurité
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["MesuresSecurite"] = QSettings().value("/DICT/yyy")
-            # Mesures de sécurité 2ème ligne
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["MesuresSecurite2"] = QSettings().value("/DICT/yyy")
-            # Dispositif de sécurité(Voir la liste .../Voir la localisation sur.../Aucun dans l'emprise)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["DispositifsSecurite"] = QSettings().value("/DICT/yyy")
-            # N° SDIS
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["Endommagement"] = QSettings().value("/DICT/yyy")
-            # Responsable du dossier
-            if QSettings().value("/DICT/respNom"):
-                dico_exploitant["NomResponsableDossier"] = QSettings().value("/DICT/respNom")
-            # Service (ex: Cartographie)
-            if QSettings().value("/DICT/respService"):
-                dico_exploitant["DésignationService"] = QSettings().value("/DICT/respService")
-            # N° téléphone responsable du dossier
-            if QSettings().value("/DICT/respTel"):
-                dico_exploitant["TelResponsableDossier"] = QSettings().value("/DICT/respTel")
-            # Catégorie du 1er réseau (ex: EL)
-            if QSettings().value("/DICT/yyy"):
-                dico_exploitant["CategorieReseau1"] = QSettings().value("/DICT/yyy")
-            # Nom du signataire
-            if QSettings().value("/DICT/signNom"):
-                dico_exploitant["NomSignataire"] = QSettings().value("/DICT/signNom")
-            # N° téléphone en cas de dégradation
-            if QSettings().value("/DICT/TelEndommagement"):
-                dico_exploitant["TelEndommagement"] = QSettings().value("/DICT/TelEndommagement")
-
-            if "RaisonSocialeExploitant" in dico_exploitant:
-                self.fdf_buffer.add_text_value(dico_exploitant["RaisonSocialeExploitant"], "RaisonSocialeExploitant")
-            if "ContactExploitant" in dico_exploitant:
-                self.fdf_buffer.add_text_value(dico_exploitant["ContactExploitant"], "ContactExploitant")
-            if "NoVoieExploitant" in dico_exploitant:
-                self.fdf_buffer.add_text_value(dico_exploitant["NoVoieExploitant"], "NoVoieExploitant")
-            if "LieuditBPExploitant" in dico_exploitant:
-                self.fdf_buffer.add_text_value(dico_exploitant["LieuditBPExploitant"], "LieuditBPExploitant")
-            if "CodePostalExploitant" in dico_exploitant:
-                self.fdf_buffer.add_text_value(dico_exploitant["CodePostalExploitant"], "CodePostalExploitant")
-            if "CommuneExploitant" in dico_exploitant:
-                self.fdf_buffer.add_text_value(dico_exploitant["CommuneExploitant"], "CommuneExploitant")
-            if "TelExploitant" in dico_exploitant:
-                self.fdf_buffer.add_text_value(dico_exploitant["TelExploitant"], "TelExploitant")
-            if "FaxExploitant" in dico_exploitant:
-                self.fdf_buffer.add_text_value(dico_exploitant["FaxExploitant"], "FaxExploitant")
-            if "CategorieReseau1" in dico_exploitant:
-                self.fdf_buffer.add_text_value(dico_exploitant["CategorieReseau1"], "CategorieReseau1")
-            if "RepresentantExploitant" in dico_exploitant:
-                self.fdf_buffer.add_text_value(dico_exploitant["RepresentantExploitant"], "RepresentantExploitant")
-            if "TelModification" in dico_exploitant:
-                self.fdf_buffer.add_text_value(dico_exploitant["TelModification"], "TelModification")
-            if "TelEndommagement" in dico_exploitant:
-                self.fdf_buffer.add_text_value(dico_exploitant["TelEndommagement"], "TelEndommagement")
-            if "Endommagement" in dico_exploitant:
-                self.fdf_buffer.add_text_value(dico_exploitant["Endommagement"], "Endommagement")
-            if "NomResponsableDossier" in dico_exploitant:
-                self.fdf_buffer.add_text_value(dico_exploitant["NomResponsableDossier"], "NomResponsableDossier")
-            if "DésignationService" in dico_exploitant:
-                self.fdf_buffer.add_text_value(dico_exploitant["DésignationService"], "DésignationService")
-            if "TelResponsableDossier" in dico_exploitant:
-                self.fdf_buffer.add_text_value(dico_exploitant["TelResponsableDossier"], "TelResponsableDossier")
-            if "NomSignataire" in dico_exploitant:
-                self.fdf_buffer.add_text_value(dico_exploitant["NomSignataire"], "NomSignataire")
-   
-
-            # declarant infos
-            dico_declarant = dtdict.xml_demande.dictionnaire()
-        
-            if "no_teleservice" in dico_declarant:
-                self.fdf_buffer.add_text_value(dico_declarant["no_teleservice"], "NoGU")
-            if "dec_denomination" in dico_declarant:
-                self.fdf_buffer.add_text_value(dico_declarant["dec_denomination"], "Denomination")
-            if "dec_adresse2" in dico_declarant:
-                self.fdf_buffer.add_text_value(dico_declarant["dec_adresse2"], "ComplementAdresse")
-            if "dec_no_voie" in dico_declarant and "dec_voie" in dico_declarant:
-                self.fdf_buffer.add_text_value(dico_declarant["dec_no_voie"] + " " + dico_declarant["dec_voie"], "NoVoie")
-            elif "dec_voie" in dico_declarant:
-                self.fdf_buffer.add_text_value(dico_declarant["dec_voie"], "NoVoie")
-            if "dec_lieudit_bp" in dico_declarant:
-                self.fdf_buffer.add_text_value(dico_declarant["dec_lieudit_bp"], "LieuditBP")
-            if "dec_code_postal" in dico_declarant:
-                self.fdf_buffer.add_text_value(dico_declarant["dec_code_postal"], "CodePostal")
-            if "dec_commune" in dico_declarant:
-                self.fdf_buffer.add_text_value(dico_declarant["dec_commune"], "Commune")
-            if "dec_pays" in dico_declarant:
-                self.fdf_buffer.add_text_value(dico_declarant["dec_pays"], "Pays")
-            if "dec_affaire" in dico_declarant:
-                self.fdf_buffer.add_text_value(dico_declarant["dec_affaire"], "NoAffaireDeclarant")
-            if "dec_contact" in dico_declarant:
-                self.fdf_buffer.add_text_value(dico_declarant["dec_contact"], "Personne_Contacter")
-            if "declaration_at" in dico_declarant:
-                declaration_at = dateutil.parser.isoparse(dico_declarant["declaration_at"])
-
-                self.fdf_buffer.add_text_value(declaration_at.strftime("%d"), "JourReception")
-                self.fdf_buffer.add_text_value(declaration_at.strftime("%m"), "MoisReception")
-                self.fdf_buffer.add_text_value(declaration_at.strftime("%Y"), "AnneeReception")
-            if "tvx_commune" in dico_declarant:
-                self.fdf_buffer.add_text_value(dico_declarant["tvx_commune"], "CommuneTravaux")
-            if "tvx_adresse" in dico_declarant:
-                self.fdf_buffer.add_text_value(dico_declarant["tvx_adresse"], "AdresseTravaux")
-
-            self.fdf_buffer.add_text_value(datetime.date.today().strftime("%d"), "JourRecepisse")
-            self.fdf_buffer.add_text_value(datetime.date.today().strftime("%m"), "MoisRecepisse")
-            self.fdf_buffer.add_text_value(datetime.date.today().strftime("%Y"), "AnneeRecepisse")
-        
-            self.fdf_buffer.close()
 
             source_path = os.path.join(os.path.dirname(__file__), "formulaire_pdf")
             source_pdf_form = os.path.join(source_path, 'cerfa_14435-04.pdf')
@@ -627,9 +686,7 @@ class DICT(object):
             subprocess.call([opener, fullfilename])
 
     def place_folio_tool(self):
-        dict_layout = DictLayout()
-        dict_layout.loadLayouts()
-        size = dict_layout.folioPrintSize()
+        size = self.__dict_layout.folioPrintSize()
         # Create the map tool using the canvas reference
         self.pointTool = FolioMapTool(self.iface.mapCanvas(), size.x(), size.y())
         self.iface.mapCanvas().setMapTool(self.pointTool)
