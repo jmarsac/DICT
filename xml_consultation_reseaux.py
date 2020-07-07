@@ -190,6 +190,9 @@ class XmlConsultationReseaux:
         el = self.__root.xpath('/descendant::{0}DT/{0}emplacementDuProjet/{0}adresse'.format(self.__ineris_prefix), namespaces=self.__nsmap)
         if el is not None and len(el) > 0:
             self.__dictionnaire["tvx_adresse"] = el[0].text
+        el = self.__root.xpath('/descendant::{0}DT/{0}travauxEtLeurCalendrier/{0}decrivezLesTravaux'.format(self.__ineris_prefix), namespaces=self.__nsmap)
+        if el is not None and len(el) > 0:
+            self.__dictionnaire["tvx_description"] = el[0].text
         el = self.__root.xpath('/descendant::{0}DT/{0}representantDuResponsableDeProjet/{0}denomination'.format(self.__ineris_prefix), namespaces=self.__nsmap)
         if el is not None and len(el) > 0:
             self.__dictionnaire["dec_denomination"] = el[0].text
@@ -244,6 +247,9 @@ class XmlConsultationReseaux:
         el = self.__root.xpath('/descendant::{0}DICT/{0}emplacementDesTravaux/{0}adresse'.format(self.__ineris_prefix), namespaces=self.__nsmap)
         if el is not None and len(el) > 0:
             self.__dictionnaire["tvx_adresse"] = el[0].text
+        el = self.__root.xpath('/descendant::{0}DICT/{0}travauxEtLeurCalendrier/{0}decrivezLesTravaux'.format(self.__ineris_prefix), namespaces=self.__nsmap)
+        if el is not None and len(el) > 0:
+            self.__dictionnaire["tvx_description"] = el[0].text
         el = self.__root.xpath('/descendant::{0}DICT/{0}executantDesTravaux/{0}noSiret'.format(self.__ineris_prefix), namespaces=self.__nsmap)
         if el is not None and len(el) > 0:
             self.__dictionnaire["dec_siret"] = el[0].text
@@ -304,6 +310,9 @@ class XmlConsultationReseaux:
         el = self.__root.xpath('/descendant::{0}partieDICT/{0}emplacementDesTravaux/{0}adresse'.format(self.__ineris_prefix), namespaces=self.__nsmap)
         if el is not None and len(el) > 0:
             self.__dictionnaire["tvx_adresse"] = el[0].text
+        el = self.__root.xpath('/descendant::{0}partieDICT/{0}travauxEtLeurCalendrier/{0}decrivezLesTravaux'.format(self.__ineris_prefix), namespaces=self.__nsmap)
+        if el is not None and len(el) > 0:
+            self.__dictionnaire["tvx_description"] = el[0].text
         el = self.__root.xpath('/descendant::{0}partieDICT/{0}executantDesTravaux/{0}denomination'.format(self.__ineris_prefix), namespaces=self.__nsmap)
         if el is not None and len(el) > 0:
             self.__dictionnaire["dec_denomination"] = el[0].text
@@ -357,6 +366,9 @@ class XmlConsultationReseaux:
         el = self.__root.xpath('/descendant::{0}ATU/{0}travauxEmplacementDureeDescription/{0}adresse'.format(self.__ineris_prefix), namespaces=self.__nsmap)
         if el is not None and len(el) > 0:
             self.__dictionnaire["tvx_adresse"] = el[0].text
+        el = self.__root.xpath('/descendant::{0}ATU/{0}travauxEmplacementDureeDescription/{0}travauxEtMoyensMisEnOeuvre'.format(self.__ineris_prefix), namespaces=self.__nsmap)
+        if el is not None and len(el) > 0:
+            self.__dictionnaire["tvx_description"] = el[0].text
         el = self.__root.xpath('/descendant::{0}ATU/{0}personneOrdonnantLesTravauxUrgents/{0}nom'.format(self.__ineris_prefix), namespaces=self.__nsmap)
         if el is not None and len(el) > 0:
             self.__dictionnaire["dec_denomination"] = el[0].text
