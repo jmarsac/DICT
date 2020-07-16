@@ -23,7 +23,7 @@
  '''
 from PyQt5.QtCore import Qt
 
-from qgis.core import QgsWkbTypes, QgsPointXY, QgsGeometry, QgsRectangle
+from qgis.core import QgsProject, QgsWkbTypes, QgsPointXY, QgsGeometry, QgsRectangle, QgsExpressionContextUtils
 from qgis.gui import QgsMapTool, QgsMapToolEmitPoint, QgsRubberBand
 
 from .folio_geometry import FolioGeometry
@@ -37,19 +37,23 @@ class FolioMapTool(QgsMapToolEmitPoint):
     step 3: positionner définitivement le folio
     '''
 
-    def __init__(self, canvas, size_x=0.200, size_y=0.280, print_scale=200):
+    def __init__(self, canvas, size_x, size_y, print_scale):
         self.canvas = canvas
         QgsMapToolEmitPoint.__init__(self, self.canvas)
         self.rubberBand = QgsRubberBand(self.canvas, QgsWkbTypes.PolygonGeometry)
         self.rubberBand.setStrokeColor(Qt.black)
         self.rubberBand.setWidth(2)
-        self.startPoint = QgsPointXY(0, 0)
-        '''
-        TODO: use external layout frame definition (from .qpt)
-        '''
+
+        QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_print_scale', print_scale)
         self.__printScale = print_scale
-        self.__sizePoint = QgsPointXY(size_x * print_scale, size_y * print_scale)
-        self.__layoutName = 'A4-Paysage'
+        self.__size_x = size_x
+        self.__size_y = size_y
+        self.updateSizePoint()
+
+        self.startPoint = QgsPointXY(0, 0)
+
+        self.__layoutName = ''
+        QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_layout_name', self.__layoutName)
         self.__zRotation = 0.0
         self.folio_geometry = FolioGeometry()
 
@@ -60,6 +64,27 @@ class FolioMapTool(QgsMapToolEmitPoint):
         self.isEmittingPoint = True
         self.__zRotation = 0
         self.step = 1
+
+    def setLayoutName(self, layout_name):
+        print('FolioMapTool.setLayoutName()', layout_name)
+        self.__layoutName = layout_name
+        QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_layout_name', layout_name)
+
+    def setPrintScale(self, print_scale):
+        print('FolioMapTool.setPrintScale()', print_scale)
+        self.__printScale = print_scale
+        QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_print_scale', print_scale)
+        self.updateSizePoint()
+
+    def setSize(self, size_x, size_y):
+        print("FolioMapTool.setSize()", self.__size_x, self.__size_y)
+        self.__size_x = size_x
+        self.__size_y = size_y
+        self.updateSizePoint()
+
+    def updateSizePoint(self):
+        self.__sizePoint = QgsPointXY(self.__size_x * self.__printScale, self.__size_y * self.__printScale)
+        print("FolioMapTool.updateSizePoint()", self.__sizePoint.x(), self.__sizePoint.y())
 
     '''
     def canvasClicked(self, point, button):
