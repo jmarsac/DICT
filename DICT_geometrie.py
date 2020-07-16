@@ -15,6 +15,9 @@ import os
 
 
 class DICT_geometrie(object):
+
+    __layerName = "Emprise du chantier"
+
     def __init__(self, gml, epsg=4326):
 
         msgBox = QMessageBox()
@@ -42,13 +45,14 @@ class DICT_geometrie(object):
 
         return qgs_geometry
 
-    def removeExistingGeometries(self):
-        for layer in QgsProject.instance().mapLayersByName("Emprise du chantier"):
+    @classmethod
+    def removeExistingGeometries(cls):
+        for layer in QgsProject.instance().mapLayersByName(cls.__layerName):
             QgsProject.instance().removeMapLayer(layer.id())
 
     def addGeometrie(self):
         vl = "multipolygon?crs=epsg:" + self._epsg + "&index=yes"
-        mem_layer = QgsVectorLayer(vl, "Emprise du chantier", "memory")
+        mem_layer = QgsVectorLayer(vl, self.__layerName, "memory")
         pr = mem_layer.dataProvider()
 
         f = []
