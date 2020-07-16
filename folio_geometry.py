@@ -53,7 +53,7 @@ class FolioGeometry(object):
 
     @classmethod
     def removeExistingFolios(cls):
-        for layer in QgsProject.instance().mapLayersByName(self.__layerName):
+        for layer in QgsProject.instance().mapLayersByName(cls.__layerName):
             QgsProject.instance().removeMapLayer(layer.id())
 
     def __loadExistingFolios(self, layer_name):
