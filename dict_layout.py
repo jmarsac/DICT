@@ -22,7 +22,7 @@
  ***************************************************************************/
  '''
 from PyQt5.QtCore import QSizeF
-from qgis.core import Qgis, QgsProject, QgsLayout, QgsLayoutItemMap, QgsRectangle, QgsPointXY
+from qgis.core import Qgis, QgsProject, QgsLayout, QgsLayoutItemMap, QgsExpressionContextUtils, QgsPointXY
 
 class DictLayout:
     def __init__(self):
@@ -45,8 +45,22 @@ class DictLayout:
                     cbox.addItem(layout.name())
                     set_index = True
                 page = layout.pageCollection().pages()[0]
-                map_item = QgsLayoutItemMap(layout)
                 '''
+                map_item = layout.referenceMap()
+                print("=========================")
+                print(layout.name())
+                print("displayName",map_item.displayName())
+                print("map_item.sizeWithUnits()", map_item.sizeWithUnits().width(), map_item.sizeWithUnits().height())
+                print("map_item.fixedSize()", map_item.fixedSize())
+                print("displayName",map_item.displayName())
+                print("atlasDriven",map_item.atlasDriven())
+                print("atlasMargin",map_item.atlasMargin())
+                print("atlasScalingMode",map_item.atlasScalingMode())
+                print("extent",map_item.extent())
+                print("scale",map_item.scale())
+                print("mapRotation",map_item.mapRotation())
+                print("presetCrs",map_item.presetCrs())
+                print(".........................")
                 print(map_item)
                 print("displayName",map_item.displayName())
                 print("atlasDriven",map_item.atlasDriven())
@@ -78,6 +92,10 @@ class DictLayout:
                 self.__refMap = layout.referenceMap()
                 break;
 
+    def setPrintScale(self, print_scale):
+        QgsExpressionContextUtils.setLayoutVariable(self.__layout, 'dict_print_scale', print_scale)
+        self.__refMap.setScale(print_scale)
+
     def currentLayout(self):
         return self.__layout
 
@@ -85,14 +103,10 @@ class DictLayout:
         return self.__refMap
 
     def folioPrintSize(self):
-        dx = self.__refMap.extent().xMaximum() - self.__refMap.extent().xMinimum()
-        dy = self.__refMap.extent().yMaximum() - self.__refMap.extent().yMinimum()
-        return QgsPointXY(dx / self.__refMap.scale(), dy / self.__refMap.scale())
-
-    def folioLandSize(self):
-        dx = self.__refMap.extent().xMaximum() - self.__refMap.extent().xMinimum()
-        dy = self.__refMap.extent().yMaximum() - self.__refMap.extent().yMinimum()
-        return QgsPointXY(dx, dy)
+        h = self.__refMap.sizeWithUnits().height()
+        w = self.__refMap.sizeWithUnits().width()
+        k = 0.001
+        return QgsPointXY(w * k, h * k)
 
     def geometriePDF(self, titre, taillePlan):
         # Display layout list
