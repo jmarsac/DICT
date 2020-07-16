@@ -26,7 +26,7 @@ from PyQt5.QtCore import (QSettings, QTranslator, qVersion,
 from PyQt5.QtWidgets import QAction, QMessageBox, QDialog
 from PyQt5.QtGui import QIcon, QDesktopServices
 
-from qgis.core import Qgis, QgsPointXY
+from qgis.core import Qgis, QgsProject, QgsPointXY, QgsExpressionContextUtils
 
 # Initialize Qt resources from file resources.py
 from . import resources
@@ -35,8 +35,10 @@ from .DICT_about import DICTAbout
 from .DICT_dialog import DICTDialog
 from .DICT_dialog_config import DICTDialogConfig
 from .DICT_xml import DICT_xml
+from .DICT_geometrie import DICT_geometrie
 from .dict_layout import DictLayout
 from .fdf_buffer import FdfBuffer
+from .folio_geometry import FolioGeometry
 from .folio_map_tool import FolioMapTool
 
 import os
@@ -59,6 +61,7 @@ class DICT(object):
             application at run time.
         :type iface: QgsInterface
         """
+        print("__init__")
         # Save reference to the QGIS interface
         self.iface = iface
         # initialize plugin directory
@@ -87,6 +90,9 @@ class DICT(object):
         # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar('DICT')
         self.toolbar.setObjectName('DICT')
+
+        # scale setting
+        self.__dict_print_scale = 1
 
         # Layouts
         self.__dict_layout = DictLayout()
@@ -181,6 +187,7 @@ class DICT(object):
         return action
 
     def initGui(self):
+        print("initGui")
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
         icon_configuration_path = ':/plugins/DICT/config.png'
@@ -227,6 +234,7 @@ class DICT(object):
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
+        print("unload")
         for action in self.actions:
             self.iface.removePluginMenu(
                 self.tr('&DICT'),
@@ -237,6 +245,8 @@ class DICT(object):
 
     def run(self):
         """Run method that performs all the real work"""
+        print("run")
+
         self.dlg.setWindowFlags(Qt.WindowStaysOnTopHint)
         # set buttons icons
         if True:
@@ -247,8 +257,14 @@ class DICT(object):
 
         # connect signals
         self.dlg.toolButtonPlaceFolio.clicked.connect(self.place_folio_tool)
+        self.dlg.toolButtonEditForm.clicked.connect(self.edit_cerfa)
+        self.dlg.toolButtonCleanCanvas.clicked.connect(self.clean_canvas)
+
         self.dlg.lineEdit.textChanged.connect(self.on_lineedit_text_changed)
+        self.dlg.comboBoxPrintScale.currentTextChanged.connect(self.on_comboboxprintscale_text_changed)
         self.dlg.comboBoxLayout.currentTextChanged.connect(self.on_comboboxlayout_text_changed)
+
+        self.pointTool = None
 
         # show the dialog
         self.dlg.show()
@@ -437,6 +453,19 @@ class DICT(object):
     def on_comboboxlayout_text_changed(self):
         if len(self.dlg.comboBoxLayout.currentText()) > 0:
             self.__dict_layout.setCurrentLayoutByName(self.dlg.comboBoxLayout.currentText())
+            self.__dict_layout.setPrintScale(self.__dict_print_scale)
+            if self.pointTool is not None:
+                point_size = self.__dict_layout.folioPrintSize()
+                self.pointTool.setSize(point_size.x(), point_size.y())
+
+    def on_comboboxprintscale_text_changed(self):
+        if len(self.dlg.comboBoxPrintScale.currentText()) > 0:
+            self.__dict_print_scale = int(self.dlg.comboBoxPrintScale.currentText()[4:])
+            QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_print_scale', self.__dict_print_scale)
+            if self.__dict_layout is not None:
+                self.__dict_layout.setPrintScale(self.__dict_print_scale)
+            if self.pointTool is not None:
+                self.pointTool.setPrintScale(int(self.dlg.comboBoxPrintScale.currentText()[4:]))
 
     def on_lineedit_text_changed(self):
         titre = ""
@@ -447,18 +476,19 @@ class DICT(object):
         if len(self.dlg.lineEdit.text()) > 0:
             self.__dtdict = DICT_xml(self.dlg.lineEdit.text())
 
-            filename = self.prefix() + self.__dtdict.xml_demande.type_demande() \
+            self.filename = self.prefix() + self.__dtdict.xml_demande.type_demande() \
                        + "-" + self.__dtdict.xml_demande.no_teleservice() \
                        + self.__suffix
-            self.titre = filename
+            self.titre = self.filename
 
             self.fdf_buffer = FdfBuffer()
-            self.fdf_buffer.open(filename + ".pdf")
+            self.fdf_buffer.open(self.filename + ".pdf")
             type_demande = self.__dtdict.xml_demande.dictionnaire()["type_demande"]
             self.fdf_buffer.add_checkbox_value(type_demande == "DT", "Recepisse_DT")
             self.fdf_buffer.add_checkbox_value(type_demande == "DICT", "Recepisse_DICT")
             self.fdf_buffer.add_checkbox_value(type_demande == "DC", "Recepisse_DC")
             self.fdf_buffer.add_text_value(self.__dtdict.xml_demande.dictionnaire()["no_teleservice"], "NoGU")
+            QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_no_teleservice', self.__dtdict.xml_demande.no_teleservice())
 
             # update dialog infos
             self.dlg.labelType_demande.setText(self.__dtdict.xml_demande.dictionnaire()["type_demande"])
@@ -588,24 +618,6 @@ class DICT(object):
 
 
 
-            source_path = os.path.join(os.path.dirname(__file__), "formulaire_pdf")
-            source_pdf_form = os.path.join(source_path, 'cerfa_14435-04.pdf')
-            target_path = QSettings().value("/DICT/configRep")
-            target_form = os.path.join(target_path, filename)
-
-            #print("source=", source_pdf_form)
-            #print("target=",target_form)
-            shutil.copy2(source_pdf_form, target_form + ".pdf")
-            try:
-                fdf_file = open(target_form + '.fdf', "w", encoding="iso-8859-1")
-                for line in self.fdf_buffer.get_buffer():
-                    print(line, file=fdf_file)
-            except Exception as e:
-                self.iface.messageBar().pushMessage("Impossible de créer fichier FDF", str(e), Qgis.Info )
-            else:
-                fdf_file.close()
-                pdf = target_form + ".pdf"
-                self.open_file(target_form + ".fdf")
             try:
                 planPDF = dtdict.geometriePDF(titre)
             except :
@@ -706,6 +718,40 @@ class DICT(object):
     def place_folio_tool(self):
         size = self.__dict_layout.folioPrintSize()
         # Create the map tool using the canvas reference
-        self.pointTool = FolioMapTool(self.iface.mapCanvas(), size.x(), size.y())
+        self.pointTool = FolioMapTool(self.iface.mapCanvas(), size.x(), size.y(), self.__dict_print_scale)
+        self.pointTool.setLayoutName(self.__dict_layout.currentLayout().name())
         self.iface.mapCanvas().setMapTool(self.pointTool)
+
+    def edit_cerfa(self):
+        source_path = os.path.join(os.path.dirname(__file__), "formulaire_pdf")
+        source_pdf_form = os.path.join(source_path, 'cerfa_14435-04.pdf')
+        target_path = QSettings().value("/DICT/configRep")
+        target_form = os.path.join(target_path, self.filename)
+
+        # print("source=", source_pdf_form)
+        # print("target=",target_form)
+        shutil.copy2(source_pdf_form, target_form + ".pdf")
+        try:
+            fdf_file = open(target_form + '.fdf', "w", encoding="iso-8859-1")
+            for line in self.fdf_buffer.get_buffer():
+                print(line, file=fdf_file)
+        except Exception as e:
+            self.iface.messageBar().pushMessage("Impossible de créer fichier FDF", str(e), Qgis.Info)
+        else:
+            fdf_file.close()
+            pdf = target_form + ".pdf"
+            self.open_file(target_form + ".fdf")
+
+    def clean_canvas(self):
+        FolioGeometry.removeExistingFolios()
+        DICT_geometrie.removeExistingGeometries()
+        self.iface.mapCanvas().refresh()
+
+        self.dlg.labelType_demande.setText("")
+        self.dlg.labelNo_teleservice.setText("")
+        self.dlg.labelAdresse_travaux.setText("")
+        self.dlg.labelCommune_travaux.setText("")
+        self.dlg.labelDescription_travaux.setText("")
+
+        self.dlg.comboBoxLayout.setCurrentIndex(0)
 
