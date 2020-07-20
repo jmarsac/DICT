@@ -21,14 +21,105 @@
  *                                                                         *
  ***************************************************************************/
  '''
-from PyQt5.QtCore import QSizeF
-from qgis.core import Qgis, QgsProject, QgsLayout, QgsLayoutItemMap, QgsExpressionContextUtils, QgsPointXY
+from PyQt5.QtCore import QSizeF, QFileInfo
+from qgis.core import Qgis, QgsApplication, QgsProject, QgsLayout, QgsLayoutItemMap, QgsExpressionContextUtils, QgsPointXY
+
+import os
 
 class DictLayout:
     def __init__(self):
         """Constructor"""
         self.__layout = None
         self.__refMap = None
+
+    @classmethod
+    def layoutExists(cls, layout_name):
+        projectInstance = QgsProject.instance()
+        manager = projectInstance.layoutManager()
+        layouts_list = manager.printLayouts()
+
+        for layout in layouts_list:
+            # to be used by DICT plugin, layout name must start with 'dict' (case insensitive)
+            if layout.name().lower() == layout_name.lower():
+                return True
+
+        return False
+
+    def loadTemplates(self, cbox=None):
+        projectInstance = QgsProject.instance()
+        manager = projectInstance.layoutManager()
+        layouts_list = manager.printLayouts()
+        if cbox is not None:
+            cbox.clear()
+            set_index = False
+
+        profile_dir = QgsApplication.qgisSettingsDirPath()
+        templates_dir = os.path.join(profile_dir, 'composer_templates')
+        templates_dir = os.path.join(profile_dir,  'python//plugins/DICT/layouts')
+
+        # Search the templates folder and add files to templates list and sort it
+        templates = [f.name for f in os.scandir(templates_dir) if f.is_file()]
+        templates.reverse()
+
+        # Get the project file name and if it exist the project title. Use for Title suggestion
+        project_file_name = QFileInfo(QgsProject.instance().fileName()).baseName()
+        project_title = QgsProject.instance().title()
+        if project_title == '':
+            project_title = project_file_name
+
+        # Add all the templates from the list to the listWidget (only add files with *.qpt extension and prefixed
+        # with 'dict' (case unsensitive))
+        for template in templates:
+            filename, extension = os.path.splitext(template)
+            if extension == '.qpt' and filename[0:4].lower() == 'dict':
+                if cbox is not None:
+                    cbox.addItem(filename)
+                    set_index = True
+
+    # Python function that do the main work of setting up the print layout
+    # The code in the function can work stand alone if you use the commented variables and edit their values
+    def loadLayout(self, template_source, layout_name, title_text):
+        """ Generate the layout """
+        from qgis.core import (QgsProject,
+                               QgsPrintLayout,
+                               QgsReadWriteContext)
+        from qgis.utils import iface
+        from PyQt5.QtXml import QDomDocument
+
+        # template_source = '/home/user/Document/Template.qpt'
+        # layout_name = 'NewLayout'
+        # title_text = 'New Title'
+
+        # Create objects lm = layout manager, l = print layout
+        lm = QgsProject.instance().layoutManager()
+        l = QgsPrintLayout(QgsProject.instance())
+        l.initializeDefaults()
+
+        # Load template file and load it into the layout (l)
+        template_file = open(template_source, 'r+', encoding='utf-8')
+        template_content = template_file.read()
+        template_file.close()
+        document = QDomDocument()
+        document.setContent(template_content)
+        context = QgsReadWriteContext()
+        l.loadFromTemplate(document, context)
+
+        # Give the layout a name (must be unique)
+        l.setName(layout_name)
+
+        '''
+        # Get current canvas extent and apply that to all maps (items) in layout
+        # Replace any text "{{title}}" in any layout label with the dialog Title text
+        canvas = iface.mapCanvas()
+        for item in l.items():
+            if item.type() == 65639:  # Map
+                item.zoomToExtent(canvas.extent())
+            if item.type() == 65641:  # Label
+                item.setText(item.text().replace('{{title}}', title_text))
+        '''
+        # Add layout to layout manager
+        l.refresh()
+        lm.addLayout(l)
 
     def loadLayouts(self, cbox=None):
         projectInstance = QgsProject.instance()
@@ -82,6 +173,21 @@ class DictLayout:
         if cbox is not None and set_index == True:
             cbox.setCurrentIndex(0)
 
+    def removeLayoutByName(self, layout_name):
+        projectInstance = QgsProject.instance()
+        manager = projectInstance.layoutManager()
+        layouts_list = manager.printLayouts()
+        for layout in layouts_list:
+            if layout.name() == layout_name:
+                if self.__layout is not None and self.__layout.name == layout_name:
+                    self.__layout = None
+                layouts_list.remove(layout)
+                break;
+
+        for layout in layouts_list:
+            self.__layout = layout
+            break
+
     def setCurrentLayoutByName(self, layout_name):
         projectInstance = QgsProject.instance()
         manager = projectInstance.layoutManager()
@@ -90,6 +196,7 @@ class DictLayout:
             if layout.name() == layout_name:
                 self.__layout = layout
                 self.__refMap = layout.referenceMap()
+                print("setCurrentLayoutByName()", layout.name())
                 break;
 
     def setPrintScale(self, print_scale):
@@ -97,6 +204,7 @@ class DictLayout:
         self.__refMap.setScale(print_scale)
 
     def currentLayout(self):
+        #print("currentLayout()", self.__layout.name() if self.__layout else 'None')
         return self.__layout
 
     def referenceMap(self):

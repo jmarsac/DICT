@@ -26,7 +26,9 @@ from PyQt5.QtCore import (QSettings, QTranslator, qVersion,
 from PyQt5.QtWidgets import QAction, QMessageBox, QDialog
 from PyQt5.QtGui import QIcon, QDesktopServices
 
-from qgis.core import Qgis, QgsProject, QgsPointXY, QgsExpressionContextUtils
+from qgis.core import Qgis, QgsProject, QgsPointXY, QgsExpressionContextUtils, QgsVectorLayer \
+    , QgsFeatureRequest, QgsFeature \
+    , QgsLayoutAtlas, QgsLayoutItemMap, QgsLayoutExporter
 
 # Initialize Qt resources from file resources.py
 from . import resources
@@ -40,6 +42,7 @@ from .dict_layout import DictLayout
 from .fdf_buffer import FdfBuffer
 from .folio_geometry import FolioGeometry
 from .folio_map_tool import FolioMapTool
+from .utils import Utils
 
 import os
 import sys
@@ -96,7 +99,7 @@ class DICT(object):
 
         # Layouts
         self.__dict_layout = DictLayout()
-        self.__dict_layout.loadLayouts(self.dlg.comboBoxLayout)
+        self.__dict_layout.loadTemplates(self.dlg.comboBoxLayout)
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -257,6 +260,7 @@ class DICT(object):
 
         # connect signals
         self.dlg.toolButtonPlaceFolio.clicked.connect(self.place_folio_tool)
+        self.dlg.toolButtonCreateMaps.clicked.connect(self.create_pdf_maps)
         self.dlg.toolButtonEditForm.clicked.connect(self.edit_cerfa)
         self.dlg.toolButtonCleanCanvas.clicked.connect(self.clean_canvas)
 
@@ -269,9 +273,16 @@ class DICT(object):
         # show the dialog
         self.dlg.show()
 
+        QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_type_demande', "")
         # output files names prefix and suffix
-        self.__prefix = QSettings().value("/DICT/prefRecep") + "-" if QSettings().value("/DICT/prefRecep") != "" else ""
-        self.__suffix = "-" + QSettings().value("/DICT/sufRecep") if QSettings().value("/DICT/sufRecep") != "" else ""
+        self.__prefix = QSettings().value("/DICT/prefRecep")
+        QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_prefix', self.__prefix)
+        self.__suffix = QSettings().value("/DICT/sufRecep")
+        QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_suffix', self.__suffix)
+        self.__map_prefix = QSettings().value("/DICT/prefPlan")
+        QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_map_prefix', self.__map_prefix)
+        self.__map_suffix = QSettings().value("/DICT/sufPlan")
+        QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_map_suffix', self.__map_suffix)
         # exploitant infos
         self.__dico_exploitant = dict()
 
@@ -452,7 +463,12 @@ class DICT(object):
 
     def on_comboboxlayout_text_changed(self):
         if len(self.dlg.comboBoxLayout.currentText()) > 0:
-            self.__dict_layout.setCurrentLayoutByName(self.dlg.comboBoxLayout.currentText())
+            layout_name = self.dlg.comboBoxLayout.currentText()
+            if DictLayout.layoutExists(layout_name):
+                self.__dict_layout.removeLayoutByName(layout_name)
+            full_filename = "{}/{}.qpt".format(QSettings().value("/DICT/configRepQPT", Utils.resolve('layouts'),type=str), layout_name)
+            self.__dict_layout.loadLayout(full_filename, layout_name, 'THIS IS TITLE')
+            self.__dict_layout.setCurrentLayoutByName(layout_name)
             self.__dict_layout.setPrintScale(self.__dict_print_scale)
             if self.pointTool is not None:
                 point_size = self.__dict_layout.folioPrintSize()
@@ -476,10 +492,18 @@ class DICT(object):
         if len(self.dlg.lineEdit.text()) > 0:
             self.__dtdict = DICT_xml(self.dlg.lineEdit.text())
 
-            self.filename = self.prefix() + self.__dtdict.xml_demande.type_demande() \
+            QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_type_demande', self.__dtdict.xml_demande.type_demande())
+            self.filename = self.prefix() + " " + self.__dtdict.xml_demande.type_demande() \
                        + "-" + self.__dtdict.xml_demande.no_teleservice() \
-                       + self.__suffix
+                       + " " + self.suffix()
+            self.filename = self.filename.strip().replace(" ", "-")
+            QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_filename', self.filename)
             self.titre = self.filename
+            self.map_filename = self.mapPrefix() + " " + self.__dtdict.xml_demande.type_demande() \
+                            + "-" + self.__dtdict.xml_demande.no_teleservice() \
+                            + " " + self.mapSuffix()
+            self.map_filename = self.map_filename.strip().replace(" ", "-")
+            QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_map_filename', self.map_filename)
 
             self.fdf_buffer = FdfBuffer()
             self.fdf_buffer.open(self.filename + ".pdf")
@@ -596,6 +620,15 @@ class DICT(object):
 
     def suffix(self):
         return self.__suffix
+
+    def setMapPrefix(self, prefix):
+        self.__map_prefix = prefix
+
+    def mapPrefix(self):
+        return self.__map_prefix
+
+    def mapSuffix(self):
+        return self.__map_suffix
 
     def dtDict(self):
         return self.__dtdict
@@ -716,6 +749,14 @@ class DICT(object):
             subprocess.call([opener, fullfilename])
 
     def place_folio_tool(self):
+        if len(self.dlg.comboBoxLayout.currentText()) > 0:
+            layout_name = self.dlg.comboBoxLayout.currentText()
+            if DictLayout.layoutExists(layout_name):
+                self.__dict_layout.removeLayoutByName(layout_name)
+            full_filename = "{}/{}.qpt".format(QSettings().value("/DICT/configRepQPT", Utils.resolve('layouts'),type=str), layout_name)
+            self.__dict_layout.loadLayout(full_filename, layout_name, 'THIS IS TITLE')
+            self.__dict_layout.setCurrentLayoutByName(layout_name)
+        self.on_comboboxprintscale_text_changed()
         size = self.__dict_layout.folioPrintSize()
         # Create the map tool using the canvas reference
         self.pointTool = FolioMapTool(self.iface.mapCanvas(), size.x(), size.y(), self.__dict_print_scale)
@@ -755,3 +796,95 @@ class DICT(object):
 
         self.dlg.comboBoxLayout.setCurrentIndex(0)
 
+    def create_pdf_maps(self):
+        #print("create_pdf_maps")
+        if FolioGeometry.existsFoliosLayer():
+            try:
+                foliosLayers = QgsProject.instance().mapLayersByName(FolioGeometry.layerName())
+                if len(foliosLayers) == 1:
+                    foliosLayer = foliosLayers[0]
+                    #print("Creating maps")
+                    iterator = foliosLayer.getFeatures()
+                    feature = QgsFeature()
+                    if iterator.nextFeature(feature):
+                        layout_name = feature.attribute("layout")
+
+                    self.map_filename = QgsExpressionContextUtils.projectScope(QgsProject.instance()).variable('dict_map_filename')
+
+                    self.__dict_layout.setCurrentLayoutByName(layout_name)
+                    '''
+                    print("current layout", self.__dict_layout.currentLayout())
+
+                    print("custom properties", self.__dict_layout.currentLayout().customProperties())
+                    print('atlasRasterFormat', self.__dict_layout.currentLayout().customProperty('atlasRasterFormat'))
+                    print('exportWorldFile', self.__dict_layout.currentLayout().customProperty('exportWorldFile'))
+                    print('forceVector', self.__dict_layout.currentLayout().customProperty('forceVector'))
+                    print('pdfAppendGeoreference',
+                          self.__dict_layout.currentLayout().customProperty('pdfAppendGeoreference'))
+                    print('pdfCreateGeoPdf', self.__dict_layout.currentLayout().customProperty('pdfCreateGeoPdf'))
+                    print('pdfDisableRasterTiles',
+                          self.__dict_layout.currentLayout().customProperty('pdfDisableRasterTiles'))
+                    print('pdfExportThemes', self.__dict_layout.currentLayout().customProperty('pdfExportThemes'))
+                    print('pdfIncludeMetadata', self.__dict_layout.currentLayout().customProperty('pdfIncludeMetadata'))
+                    print('pdfLayerOrder', self.__dict_layout.currentLayout().customProperty('pdfLayerOrder'))
+                    print('pdfOgcBestPracticeFormat', self.__dict_layout.currentLayout().customProperty('pdfOgcBestPracticeFormat'))
+                    print('pdfTextFormat', self.__dict_layout.currentLayout().customProperty('pdfTextFormat'))
+                    print('pdfSimplify', self.__dict_layout.currentLayout().customProperty('pdfSimplify'))
+                    print('singleFile', self.__dict_layout.currentLayout().customProperty('singleFile'))
+                    print('variableNames', self.__dict_layout.currentLayout().customProperty('variableNames'))
+                    print('variableValues', self.__dict_layout.currentLayout().customProperty('variableValues'))
+                    '''
+                    self.__dict_layout.currentLayout().setCustomProperty('pdfSimplify', True)
+                    self.__dict_layout.currentLayout().setCustomProperty('pdfIncludeMetadata', True)
+                    atlas = self.__dict_layout.currentLayout().atlas()
+                    atlas.setCoverageLayer(foliosLayer)
+                    atlas.setSortAscending(True)
+                    atlas.setEnabled(True)
+                    atlas.setFilenameExpression("@dict_map_filename || '-' || @atlas_featurenumber")
+                    '''
+                    print("enabled", atlas.enabled())
+                    print("coverageLayer()",atlas.coverageLayer())
+                    print("count", atlas.count())
+                    print("filenameExpression()", atlas.filenameExpression())
+                    print("filterFeatures()", atlas.filterFeatures())
+                    print("filterExpression()", atlas.filterExpression())
+                    print("nameForPage()", atlas.nameForPage(1))
+                    print("pageNameExpression()", atlas.pageNameExpression())
+                    atlas.setFilenameExpression("dict_map_filename || '-' || @atlas_featureid")
+                    print("filenameExpression()", atlas.filenameExpression())
+                    '''
+
+                    atlas.updateFeatures()
+
+                    export_settings = QgsLayoutExporter.PdfExportSettings()
+
+                    atlas.layout().referenceMap().setAtlasDriven(True)
+                    atlas.layout().referenceMap().setAtlasScalingMode(QgsLayoutItemMap.Fixed)
+                    atlas.layout().setCustomProperty('singleFile', True)
+
+                    # disable grids
+                    grids = atlas.layout().referenceMap().grids()
+                    for grid in grids:
+                        grids.removeGrid(grid.id())
+
+                    exporter = QgsLayoutExporter(atlas.layout())
+                    result = exporter.exportToPdf(
+                        atlas,
+                        Utils.resolve(self.map_filename + ".pdf", QSettings().value('/DICT/configRep')),
+                        QgsLayoutExporter.PdfExportSettings())
+
+                    '''
+                    # Creata a exporter Layout for each layout generate with Atlas
+                    exporter = QgsLayoutExporter(atlas.layout())
+                    export_settings = QgsLayoutExporter.PdfExportSettings()
+                    # For 0 to Number of features in Atlas Selection
+                    for i in range(0, atlas.count()):
+                        print(atlas.layout().name(), "i", i, "nameForPage(i)", atlas.nameForPage(i))
+
+                        print('Exporter fichier: ' + atlas.currentFilename() + '(' + str(atlas.currentFeatureNumber()) + ' sur ' + str(atlas.count()) + ')')
+
+                        # create PDF's Files
+                        exporter.exportToPdf(Utils.resolve(atlas.currentFilename() + "#" + str(i+1) + ".pdf", QSettings().value('/DICT/configRep')), QgsLayoutExporter.PdfExportSettings())
+                    '''
+            except Exception as e:
+                print(str(e))

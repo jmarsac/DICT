@@ -48,8 +48,15 @@ class FolioGeometry(object):
         self.__loadExistingFolios(self.__layerName)
 
     @classmethod
-    def LayernName(cls):
+    def layerName(cls):
         return cls.__layerName
+
+    @classmethod
+    def existsFoliosLayer(cls):
+        print("FolioGeometry.__layerName", cls.__layerName)
+        for layer in QgsProject.instance().mapLayersByName(cls.__layerName):
+            return True
+        return False
 
     @classmethod
     def removeExistingFolios(cls):
@@ -62,8 +69,8 @@ class FolioGeometry(object):
             if len(memLayers) == 1:
                 self.__memLayer = memLayers[0]
                 print("Loading existing folios...")
-        except:
-            print("No existing folios...")
+        except Exception as e:
+            print(str(e))
 
     def __addFoliosLayer(self, layer_name):
         if self.__memLayer is None:
@@ -75,7 +82,7 @@ class FolioGeometry(object):
             self.__memLayer = QgsVectorLayer(vl, layer_name, "memory")
             self.__memLayer.dataProvider().addAttributes(fields.toList())
 
-			# set Folios feature id as label on frame center 
+            # set Folios feature id as label on frame center
             pal_layer = QgsPalLayerSettings()
             pal_layer.fieldName = '$id'
             pal_layer.isExpression = True

@@ -25,6 +25,7 @@ import os
 
 from PyQt5 import uic, QtCore, QtWidgets
 from sys import platform as _platform
+from .utils import Utils
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'DICT_dialog_config.ui'))
@@ -47,6 +48,9 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         self.configRepXML.setText(QtCore.QSettings().value(
                                 "/DICT/configRepXML",
                                 QtCore.QDir.homePath()))
+        self.configRepQPT.setText(QtCore.QSettings().value(
+                                "/DICT/configRepQPT",
+                                Utils.resolve('layouts')))
         self.configPDFTK.setText(QtCore.QSettings().value(
                                 "/DICT/configPDFTK",
                                 QtCore.QDir.homePath()))
@@ -92,6 +96,8 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
             lambda: self.showDialogConfig(self.configRep))
         self.toolButtonXML.pressed.connect(
             lambda: self.showDialogConfig(self.configRepXML))
+        self.toolButtonQPT.pressed.connect(
+            lambda: self.showDialogConfig(self.configRepQPT))
         self.toolButtonPDFTK.pressed.connect(
             lambda: self.showDialogConfig(self.configPDFTK, "Executable"))
 
@@ -143,6 +149,7 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
     def accept(self):
         self.rep(self.configRep, "configRep")
         self.rep(self.configRepXML, "configRepXML")
+        self.rep(self.configRepQPT, "configRepQPT")
         self.rep(self.configPDFTK, "configPDFTK")
 
         QtCore.QSettings().setValue("/DICT/configExtension",
