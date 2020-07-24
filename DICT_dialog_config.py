@@ -127,6 +127,8 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         if rep:
             if QtCore.QFileInfo(rep).exists():
                 QtCore.QSettings().setValue("/DICT/"+nom, rep)
+            elif Utils.stringContainsVariable(rep):
+                QtCore.QSettings().setValue("/DICT/"+nom, rep)
             else:
                 if str(QtCore.QFileInfo(rep).path()) != '.':
                     QtCore.QSettings().setValue("/DICT/" + nom,
