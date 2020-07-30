@@ -647,62 +647,6 @@ class DICT(object):
     def dicoDeclarant(self):
         return self.dtDict().xml_demande.dictionnaire()
 
-    def run2(self):
-        """Run method that performs all the real work"""
-        print("run2")
-        # show the dialog
-        self.dlg.show()
-        # Run the dialog event loop
-        result = self.dlg.exec_()
-        # See if OK was pressed
-        if result:
-
-
-
-            try:
-                planPDF = dtdict.geometriePDF(titre)
-            except :
-                msgBox.setText("Erreur lors de la création du plan, vérifiez si votre composition est correctement configurée")
-                msgBox.exec_()
-                msgBox = QMessageBox()
-                msgBox.setTextFormat(Qt.RichText)
-
-            if QFile.exists(pdf) and \
-                    all([QFile.exists(p) for p in planPDF]) and \
-                    pdf and len(planPDF) > 0:
-                out = QSettings().value("/DICT/configRep")
-
-                fusion = QSettings().value("/DICT/fusionPDF")
-
-                if(fusion and
-                   self.__checkPdftk(QSettings().value("/DICT/configPDFTK"))):
-                    # Utilise pdftk pour fusionner les documents
-                    s = os.path.join(out, "envoi_" + titre + ".pdf")
-                    subprocess.call([QSettings().value(
-                                    "/DICT/configPDFTK"), pdf] +
-                                    planPDF + ["cat", "output"] + [s])
-
-                    msgBox.setText("Vous pouvez envoyer le fichier :" +
-                                   "<br><a href='file:///" + s.replace('\\', '/') + "'>" +
-                                   s.replace('\\', '/') + "</a>")
-
-                    os.remove(pdf)
-                    for p in planPDF:
-                        os.remove(p)
-                else:
-                    msgBox.setText("Vous pouvez envoyer les fichiers :" +
-                                   "<br>Récepissé : <a href='file:///" + pdf.replace('\\', '/') + "'>" + pdf.replace('\\', '/')+ "</a><br>" +
-                                   "Plans : " + '<br>'.join(["<a href='file:///" + s.replace('\\', '/') + "'>" + s.replace('\\', '/') + "</a>" for s in planPDF]) + "<br>")
-
-            else:
-                msgBox.setText("Erreur lors de la création des fichiers :\
-                \nRécepissé : " + pdf.replace('\\', '/') + "\n \
-                Plan : "+ str([s.replace('\\', '/') for s in planPDF]) )
-
-            msgBox.exec_()
-
-            # Save xml
-
     def runConfig(self):
         """Run method that performs all the real work"""
         # show the dialog
