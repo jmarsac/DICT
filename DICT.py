@@ -468,6 +468,7 @@ class DICT(object):
                 break
 
     def on_comboboxlayout_text_changed(self):
+        #print("on_comboboxlayout_text_changed")
         if len(self.dlg.comboBoxLayout.currentText()) > 0:
             layout_name = self.dlg.comboBoxLayout.currentText()
             if DictLayout.layoutExists(layout_name):
@@ -483,6 +484,7 @@ class DICT(object):
                 self.pointTool.setSize(point_size.x(), point_size.y())
 
     def on_comboboxprintscale_text_changed(self):
+        #print("on_comboboxprintscale_text_changed")
         if len(self.dlg.comboBoxPrintScale.currentText()) > 0:
             self.__dict_print_scale = int(self.dlg.comboBoxPrintScale.currentText()[4:])
             QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_print_scale', self.__dict_print_scale)
@@ -539,7 +541,7 @@ class DICT(object):
                 self.dlg.labelDescription_travaux.setText("")
 
             if "taille_des_plans" in self.dicoDeclarant():
-                print( self.dicoDeclarant()["taille_des_plans"])
+                #print( self.dicoDeclarant()["taille_des_plans"])
                 self.searchPreferredMpSizeLayout( self.dicoDeclarant()["taille_des_plans"], self.dlg.comboBoxLayout)
 
             if "RaisonSocialeExploitant" in self.__dico_exploitant:
@@ -701,6 +703,7 @@ class DICT(object):
             subprocess.call([opener, fullfilename])
 
     def place_folio_tool(self):
+        #print('place_folio_tool')
         if len(self.dlg.comboBoxLayout.currentText()) > 0:
             layout_name = self.dlg.comboBoxLayout.currentText()
             if DictLayout.layoutExists(layout_name):
@@ -806,6 +809,8 @@ class DICT(object):
                     atlas.setSortAscending(True)
                     atlas.setEnabled(True)
                     atlas.setFilenameExpression("@dict_map_filename || '-' || @atlas_featurenumber")
+                    atlas.setHideCoverage(True)
+                    #print("hide coverage ", atlas.hideCoverage())
                     '''
                     print("enabled", atlas.enabled())
                     print("coverageLayer()",atlas.coverageLayer())
