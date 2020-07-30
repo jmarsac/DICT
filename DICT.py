@@ -806,6 +806,17 @@ class DICT(object):
         self.dlg.labelDescription_travaux.setText("")
 
         self.dlg.comboBoxLayout.setCurrentIndex(0)
+        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_type_demande')
+        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_no_teleservice')
+        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_prefix')
+        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_suffix')
+        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_map_prefix')
+        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_map_suffix')
+        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_filename')
+        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_map_filename')
+        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_layout_name')
+        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_print_scale')
+        self.__dict_layout.removeProjectLayouts(True)
 
     def create_pdf_maps(self):
         #print("create_pdf_maps")
