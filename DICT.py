@@ -23,7 +23,7 @@
 from PyQt5.QtCore import (QSettings, QTranslator, qVersion,
                           QCoreApplication, QDir, QFileInfo,
                           QFile, Qt, QUrl)
-from PyQt5.QtWidgets import QAction, QMessageBox, QDialog
+from PyQt5.QtWidgets import QAction, QMessageBox, QDialog, QProgressBar
 from PyQt5.QtGui import QIcon, QDesktopServices
 
 from qgis.core import Qgis, QgsApplication, QgsProject, QgsPointXY, QgsExpressionContextUtils, QgsVectorLayer \
@@ -94,12 +94,17 @@ class DICT(object):
         self.toolbar = self.iface.addToolBar('DICT')
         self.toolbar.setObjectName('DICT')
 
+        self.__dtdict = None
+
         # scale setting
         self.__dict_print_scale = 1
 
         # Layouts
         self.__dict_layout = DictLayout()
         self.__dict_layout.loadTemplates(self.dlg.comboBoxLayout)
+
+        # geo PDF ?
+        self.create_geo_pdf = False
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -232,6 +237,7 @@ class DICT(object):
 
         firstUse = QSettings().value("DICT/isFirstUse" , 1, type = int)
         if firstUse == 1:
+            DictLayout.init_templates(True)
             QSettings().setValue("DICT/isFirstUse", 0)
             self.runAbout()
 
@@ -273,7 +279,6 @@ class DICT(object):
         # show the dialog
         self.dlg.show()
 
-        QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_type_demande', "")
         # output files names prefix and suffix
         self.__prefix = QSettings().value("/DICT/prefRecep")
         QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_prefix', self.__prefix)
@@ -805,11 +810,10 @@ class DICT(object):
         #print("create_pdf_maps")
         if FolioGeometry.existsFoliosLayer():
             try:
-                foliosLayers = QgsProject.instance().mapLayersByName(FolioGeometry.layerName())
-                if len(foliosLayers) == 1:
-                    foliosLayer = foliosLayers[0]
-                    #print("Creating maps")
-                    iterator = foliosLayer.getFeatures()
+                folios_layers = QgsProject.instance().mapLayersByName(FolioGeometry.layerName())
+                if len(folios_layers) == 1:
+                    folios_layer = folios_layers[0]
+                    iterator = folios_layer.getFeatures()
                     feature = QgsFeature()
                     if iterator.nextFeature(feature):
                         layout_name = feature.attribute("layout")
@@ -838,11 +842,11 @@ class DICT(object):
                     print('singleFile', self.__dict_layout.currentLayout().customProperty('singleFile'))
                     print('variableNames', self.__dict_layout.currentLayout().customProperty('variableNames'))
                     print('variableValues', self.__dict_layout.currentLayout().customProperty('variableValues'))
+                    print('pdfOgcBestPracticeFormat', self.__dict_layout.currentLayout().customProperty('pdfOgcBestPracticeFormat'))
                     '''
-                    self.__dict_layout.currentLayout().setCustomProperty('pdfSimplify', True)
-                    self.__dict_layout.currentLayout().setCustomProperty('pdfIncludeMetadata', True)
                     atlas = self.__dict_layout.currentLayout().atlas()
-                    atlas.setCoverageLayer(foliosLayer)
+                    atlas.setCoverageLayer(folios_layer)
+                    atlas.setSortFeatures(True)
                     atlas.setSortAscending(True)
                     atlas.setEnabled(True)
                     atlas.setFilenameExpression("@dict_map_filename || '-' || @atlas_featurenumber")
@@ -863,33 +867,112 @@ class DICT(object):
 
                     export_settings = QgsLayoutExporter.PdfExportSettings()
 
+                    atlas.layout().setCustomProperty('pdfSimplify', True)
+                    atlas.layout().setCustomProperty('pdfIncludeMetadata', True)
+                    atlas.layout().setCustomProperty('forceVector', True)
+                    atlas.layout().setCustomProperty('singleFile', False)
+                    atlas.layout().setCustomProperty('pdfTextFormat', True)
+
                     atlas.layout().referenceMap().setAtlasDriven(True)
                     atlas.layout().referenceMap().setAtlasScalingMode(QgsLayoutItemMap.Fixed)
-                    atlas.layout().setCustomProperty('singleFile', True)
 
-                    # disable grids
-                    grids = atlas.layout().referenceMap().grids()
-                    for grid in grids:
-                        grids.removeGrid(grid.id())
+                    # disable grids if map is rotated
+                    rotated = False
+                    for folio in folios_layer.getFeatures():
+                        if folio.attributes()[1] != 0:
+                            rotated = True
+                            break
 
                     exporter = QgsLayoutExporter(atlas.layout())
-                    result = exporter.exportToPdf(
-                        atlas,
-                        Utils.resolve(self.map_filename + ".pdf", QSettings().value('/DICT/configRep')),
-                        QgsLayoutExporter.PdfExportSettings())
+                    grid = atlas.layout().referenceMap().grid()
 
-                    '''
-                    # Creata a exporter Layout for each layout generate with Atlas
-                    exporter = QgsLayoutExporter(atlas.layout())
-                    export_settings = QgsLayoutExporter.PdfExportSettings()
-                    # For 0 to Number of features in Atlas Selection
-                    for i in range(0, atlas.count()):
-                        print(atlas.layout().name(), "i", i, "nameForPage(i)", atlas.nameForPage(i))
+                    if rotated:
+                        if grid:
+                            grid.setEnabled(False)
+                        atlas.layout().setCustomProperty('pdfCreateGeoPdf', False)
+                    else:
+                        atlas.layout().referenceMap().setMapRotation(0.0)
+                        if grid:
+                            grid.setEnabled(True)
+                        if self.create_geo_pdf == True:
+                            atlas.layout().setCustomProperty('pdfCreateGeoPdf', True)
 
-                        print('Exporter fichier: ' + atlas.currentFilename() + '(' + str(atlas.currentFeatureNumber()) + ' sur ' + str(atlas.count()) + ')')
+                    no_teleservice = QgsExpressionContextUtils.projectScope(QgsProject.instance()).variable('dict_no_teleservice')
+                    type_demande = QgsExpressionContextUtils.projectScope(QgsProject.instance()).variable('dict_type_demande')
+                    target_path = Utils.expandVariablesInString(QSettings().value("/DICT/configRep"), True)
+                    os.makedirs(target_path, exist_ok=True)
+                    full_filename = Utils.resolve(self.map_filename + ".pdf", target_path)
 
-                        # create PDF's Files
-                        exporter.exportToPdf(Utils.resolve(atlas.currentFilename() + "#" + str(i+1) + ".pdf", QSettings().value('/DICT/configRep')), QgsLayoutExporter.PdfExportSettings())
-                    '''
+                    if atlas.layout().customProperty('singleFile') == True:
+                        # création un seul fichier
+                        result = exporter.exportToPdf(
+                            atlas,
+                            Utils.resolve(self.map_filename + ".pdf", target_path),
+                            QgsLayoutExporter.PdfExportSettings()
+                            )
+                        if result[0] == QgsLayoutExporter.Success:
+                            msg1 = "Créer les plans PDF:"
+                            msg2 = "Plans pour " + type_demande + " " + no_teleservice + " créés dans <a href=\"{}\">{}</a>".format(
+                                QUrl.fromLocalFile(full_filename).toString(), QDir.toNativeSeparators(full_filename))
+                            self.iface.messageBar().pushMessage(msg1, msg2, Qgis.Success, 10)
+                        else:
+                            msg1 = "Créer les plans PDF:"
+                            msg2 = "Erreur " + str(result[0]) + "  lors de la création des plans pour " + type_demande + " " + no_teleservice
+                            self.iface.messageBar().pushMessage(msg1, msg2, Qgis.Critical, 10)
+                    else:
+                        # création un fichier par folio
+                        progressMessageBar = self.iface.statusBarIface()
+                        progress = QProgressBar(progressMessageBar)
+                        progress.setMaximum(atlas.count())
+                        progress.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+                        progressMessageBar.layout().addWidget(progress)
+                        self.iface.statusBarIface().addPermanentWidget(progress, Qgis.Info)
+                        '''
+                        # Create and exporter Layout for each layout generate with Atlas
+                        exporter = QgsLayoutExporter(atlas.layout())
+                        export_settings = QgsLayoutExporter.PdfExportSettings()
+                        # For 0 to Number of features in Atlas Selection
+                        '''
+                        atlas.beginRender()
+                        atlas.first()
+                        nb_errors = 0
+                        for i in range(0, atlas.count()):
+                            progress.setValue(i)
+                            self.iface.statusBarIface().showMessage("Plan #{} sur {} pour {} {}".format(i+1, atlas.count(), type_demande, no_teleservice))
+                            exporter = QgsLayoutExporter(atlas.layout())
+
+                            # create PDF's File
+                            full_filename = Utils.resolve(atlas.currentFilename() + ".pdf", target_path)
+                            print("---- hide coverage ", atlas.hideCoverage())
+                            result = exporter.exportToPdf(full_filename, QgsLayoutExporter.PdfExportSettings())
+                            print("1")
+                            print(target_path)
+                            print(no_teleservice)
+                            print(type_demande)
+                            print("i", i)
+                            if result == QgsLayoutExporter.Success:
+                                self.iface.statusBarIface().showMessage("Plan #{} pour {} {} créé".format(i+1, type_demande, no_teleservice))
+                            else:
+                                nb_errors += 1
+                                self.iface.statusBarIface().showMessage(
+                                    "Erreur à la création du plan #{} sur {} pour {} {} sur {}".format(i+1, atlas.count(), type_demande, no_teleservice))
+                            atlas.next()
+                        atlas.endRender()
+                        self.iface.statusBarIface().clearMessage()
+                        self.iface.statusBarIface().removeWidget(progress)
+
+                    if nb_errors == 0:
+                        msg1 = "Créer les plans PDF:"
+                        msg2 = "Plans pour " + type_demande + " " + no_teleservice + " créés dans <a href=\"{}\">{}</a>".format(
+                            QUrl.fromLocalFile(target_path).toString(), QDir.toNativeSeparators(target_path))
+                        self.iface.messageBar().pushMessage(msg1, msg2, Qgis.Success, 10)
+                    else:
+                        msg1 = "Créer les plans PDF:"
+                        msg2 = "Erreurs  lors de la création des plans pour " + type_demande + " " + no_teleservice
+                        self.iface.messageBar().pushMessage(msg1, msg2, Qgis.Critical, 10)
+
             except Exception as e:
-                print(str(e))
+                msg1 = "Folios introuvables:"
+                msg2 = str(e)
+                self.iface.messageBar().pushMessage(msg1, msg2, Qgis.Critical, 10)
+
