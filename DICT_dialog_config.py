@@ -25,6 +25,7 @@ import os
 
 from PyQt5 import uic, QtCore, QtWidgets
 from sys import platform as _platform
+from qgis.core import QgsApplication
 from .utils import Utils
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -45,12 +46,12 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         self.configRep.setText(QtCore.QSettings().value(
                                 "/DICT/configRep",
                                 QtCore.QDir.homePath()))
-        self.configRepXML.setText(QtCore.QSettings().value(
-                                "/DICT/configRepXML",
+        self.configXML.setText(QtCore.QSettings().value(
+                                "/DICT/configXML",
                                 QtCore.QDir.homePath()))
-        self.configRepQPT.setText(QtCore.QSettings().value(
-                                "/DICT/configRepQPT",
-                                Utils.resolve('layouts')))
+        self.configQPT.setText(QtCore.QSettings().value(
+                                "/DICT/configQPT",
+                                os.path.join(QgsApplication.qgisSettingsDirPath(), 'composer_templates')))
         self.configPDFTK.setText(QtCore.QSettings().value(
                                 "/DICT/configPDFTK",
                                 QtCore.QDir.homePath()))
@@ -95,9 +96,9 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         self.toolButton.pressed.connect(
             lambda: self.showDialogConfig(self.configRep))
         self.toolButtonXML.pressed.connect(
-            lambda: self.showDialogConfig(self.configRepXML))
+            lambda: self.showDialogConfig(self.configXML))
         self.toolButtonQPT.pressed.connect(
-            lambda: self.showDialogConfig(self.configRepQPT))
+            lambda: self.showDialogConfig(self.configQPT))
         self.toolButtonPDFTK.pressed.connect(
             lambda: self.showDialogConfig(self.configPDFTK, "Executable"))
 
@@ -150,8 +151,8 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
 
     def accept(self):
         self.rep(self.configRep, "configRep")
-        self.rep(self.configRepXML, "configRepXML")
-        self.rep(self.configRepQPT, "configRepQPT")
+        self.rep(self.configXML, "configXML")
+        self.rep(self.configQPT, "configQPT")
         self.rep(self.configPDFTK, "configPDFTK")
 
         QtCore.QSettings().setValue("/DICT/configExtension",

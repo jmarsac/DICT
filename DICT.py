@@ -26,7 +26,7 @@ from PyQt5.QtCore import (QSettings, QTranslator, qVersion,
 from PyQt5.QtWidgets import QAction, QMessageBox, QDialog
 from PyQt5.QtGui import QIcon, QDesktopServices
 
-from qgis.core import Qgis, QgsProject, QgsPointXY, QgsExpressionContextUtils, QgsVectorLayer \
+from qgis.core import Qgis, QgsApplication, QgsProject, QgsPointXY, QgsExpressionContextUtils, QgsVectorLayer \
     , QgsFeatureRequest, QgsFeature \
     , QgsLayoutAtlas, QgsLayoutItemMap, QgsLayoutExporter
 
@@ -466,8 +466,10 @@ class DICT(object):
             layout_name = self.dlg.comboBoxLayout.currentText()
             if DictLayout.layoutExists(layout_name):
                 self.__dict_layout.removeLayoutByName(layout_name)
-            full_filename = "{}/{}.qpt".format(QSettings().value("/DICT/configRepQPT", Utils.resolve('layouts'),type=str), layout_name)
-            self.__dict_layout.loadLayout(full_filename, layout_name, 'THIS IS TITLE')
+            full_filename = "{}/{}.qpt".format(
+                QSettings().value("/DICT/configQPT", os.path.join(QgsApplication.qgisSettingsDirPath(), 'composer_templates'),type=str),
+                layout_name)
+            self.__dict_layout.loadLayout(full_filename, layout_name, layout_name)
             self.__dict_layout.setCurrentLayoutByName(layout_name)
             self.__dict_layout.setPrintScale(self.__dict_print_scale)
             if self.pointTool is not None:
@@ -753,8 +755,10 @@ class DICT(object):
             layout_name = self.dlg.comboBoxLayout.currentText()
             if DictLayout.layoutExists(layout_name):
                 self.__dict_layout.removeLayoutByName(layout_name)
-            full_filename = "{}/{}.qpt".format(QSettings().value("/DICT/configRepQPT", Utils.resolve('layouts'),type=str), layout_name)
-            self.__dict_layout.loadLayout(full_filename, layout_name, 'THIS IS TITLE')
+            full_filename = "{}/{}.qpt".format(
+                QSettings().value("/DICT/configQPT", os.path.join(QgsApplication.qgisSettingsDirPath(), 'composer_templates'),type=str),
+                layout_name)
+            self.__dict_layout.loadLayout(full_filename, layout_name, layout_name)
             self.__dict_layout.setCurrentLayoutByName(layout_name)
         self.on_comboboxprintscale_text_changed()
         size = self.__dict_layout.folioPrintSize()
@@ -766,7 +770,8 @@ class DICT(object):
     def edit_cerfa(self):
         source_path = os.path.join(os.path.dirname(__file__), "formulaire_pdf")
         source_pdf_form = os.path.join(source_path, 'cerfa_14435-04.pdf')
-        target_path = QSettings().value("/DICT/configRep")
+        target_path = Utils.expandVariablesInString(QSettings().value("/DICT/configRep"), True)
+        os.makedirs(target_path, exist_ok=True)
         target_form = os.path.join(target_path, self.filename)
 
         # print("source=", source_pdf_form)
