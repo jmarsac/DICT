@@ -465,6 +465,7 @@ class DICT(object):
             name = combo_box.itemText(i)
             if map_size.upper() in name:
                 combo_box.setCurrentIndex(i)
+                break
 
     def on_comboboxlayout_text_changed(self):
         if len(self.dlg.comboBoxLayout.currentText()) > 0:
