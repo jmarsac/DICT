@@ -23,14 +23,42 @@
  '''
 from PyQt5.QtCore import QSizeF, QFileInfo
 from qgis.core import Qgis, QgsApplication, QgsProject, QgsLayout, QgsLayoutItemMap, QgsExpressionContextUtils, QgsPointXY
+from .utils import Utils
 
-import os
+import os, shutil
+
+DICT_LAYOUT_PREFIX = "DICT"
+TA_DICT_LAYOUT_PREFIX = "TA_DICT"
 
 class DictLayout:
     def __init__(self):
         """Constructor"""
         self.__layout = None
         self.__refMap = None
+
+    @classmethod
+    def isDictLayoutName(cls, layout_name, check_extension:bool=False):
+        if check_extension:
+            filename, extension = os.path.splitext(layout_name)
+            if not extension.lower() == ".qpt":
+                return False
+
+        if layout_name.upper().startswith(DICT_LAYOUT_PREFIX):
+            return True
+        else:
+            return False
+
+    @classmethod
+    def isTaDictLayoutName(cls, layout_name, check_extension:bool=False):
+        if check_extension:
+            filename, extension = os.path.splitext(layout_name)
+            if not extension.lower() == ".qpt":
+                return False
+
+        if layout_name.upper().startswith(TA_DICT_LAYOUT_PREFIX):
+            return True
+        else:
+            return False
 
     @classmethod
     def layoutExists(cls, layout_name):
@@ -45,6 +73,32 @@ class DictLayout:
 
         return False
 
+    @classmethod
+    def init_templates(cls, reset_all:bool=False):
+        #print("init_templates")
+        templates_dir = QSettings().value("/DICT/configQPT",
+                          os.path.join(QgsApplication.qgisSettingsDirPath(), 'composer_templates'), type=str),
+
+        if not os.path.isdir(templates_dir):
+            os.mkdir(templates_dir)
+            to_copy = True
+        else:
+            templates = [f.name for f in os.scandir(templates_dir) if f.is_file() and (self.isDictLayoutName(f.name) or self.isTaDictLayoutName(f.name))]
+            if len(templates) == 0 or reset_all == True:
+                to_copy = True
+            else:
+                to_copy = False
+
+        if to_copy:
+            templates = [f.name for f in os.scandir(templates_dir) if f.is_file() and (self.isDictLayoutName(f.name) or self.isTaDictLayoutName(f.name))]
+            for t in templates:
+                os.remove(os.path.join(templates_dir, t))
+
+            source_path = Utils.resolve('layouts')
+            templates = [f.name for f in os.scandir(source_path) if f.is_file() and (self.isDictLayoutName(f.name) or self.isTaDictLayoutName(f.name))]
+            for t in templates:
+                shutil.copy2(os.path.join(source_path, t), templates_dir)
+
     def loadTemplates(self, cbox=None):
         projectInstance = QgsProject.instance()
         manager = projectInstance.layoutManager()
@@ -55,7 +109,6 @@ class DictLayout:
 
         profile_dir = QgsApplication.qgisSettingsDirPath()
         templates_dir = os.path.join(profile_dir, 'composer_templates')
-        templates_dir = os.path.join(profile_dir,  'python//plugins/DICT/layouts')
 
         # Search the templates folder and add files to templates list and sort it
         templates = [f.name for f in os.scandir(templates_dir) if f.is_file()]
@@ -70,9 +123,9 @@ class DictLayout:
         # Add all the templates from the list to the listWidget (only add files with *.qpt extension and prefixed
         # with 'dict' (case unsensitive))
         for template in templates:
-            filename, extension = os.path.splitext(template)
-            if extension == '.qpt' and filename[0:4].lower() == 'dict':
+            if self.isDictLayoutName(template, True):
                 if cbox is not None:
+                    filename, extension = os.path.splitext(template)
                     cbox.addItem(filename)
                     set_index = True
 
@@ -130,8 +183,7 @@ class DictLayout:
             set_index = False
 
         for layout in layouts_list:
-            # to be used by DICT plugin, layout name must start with 'dict' (case insensitive)
-            if layout.name().lower()[0:4] == 'dict':
+            if self.isDictLayoutName(layout.name()):
                 if cbox is not None:
                     cbox.addItem(layout.name())
                     set_index = True
@@ -176,23 +228,32 @@ class DictLayout:
     def removeLayoutByName(self, layout_name):
         projectInstance = QgsProject.instance()
         manager = projectInstance.layoutManager()
-        layouts_list = manager.printLayouts()
-        for layout in layouts_list:
+        for layout in manager.printLayouts():
             if layout.name() == layout_name:
                 if self.__layout is not None and self.__layout.name == layout_name:
                     self.__layout = None
-                layouts_list.remove(layout)
+                manager.removeLayout(layout)
                 break;
 
-        for layout in layouts_list:
-            self.__layout = layout
-            break
+        if not self.__layout:
+            for layout in manager.printLayouts():
+                self.__layout = layout
+                break
+
+    def removeProjectLayouts(self, remove_ta:bool=False):
+        projectInstance = QgsProject.instance()
+        manager = projectInstance.layoutManager()
+        self.__layout = None
+        for layout in manager.printLayouts():
+            if self.isDictLayoutName(layout.name()):
+                manager.removeLayout(layout)
+            elif remove_ta and self.isTaDictLayoutName(layout.name()):
+                manager.removeLayout(layout)
 
     def setCurrentLayoutByName(self, layout_name):
         projectInstance = QgsProject.instance()
         manager = projectInstance.layoutManager()
-        layouts_list = manager.printLayouts()
-        for layout in layouts_list:
+        for layout in manager.printLayouts():
             if layout.name() == layout_name:
                 self.__layout = layout
                 self.__refMap = layout.referenceMap()
