@@ -934,7 +934,69 @@ class DICT(object):
                         atlas.endRender()
                         self.iface.messageBar().clearWidgets()
                         self.iface.statusBarIface().clearMessage()
-                        self.iface.statusBarIface().removeWidget(progress)
+
+                    layer = FolioGeometry.foliosLayer()
+                    if layer:
+                        layer.setOpacity(1)
+                        layer.setLabelsEnabled(True)
+                    layer = DICT_geometrie.empriseLayer()
+                    if layer:
+                        layer.setOpacity(1)
+
+                    # création du taleau d'assemblage
+                    if atlas.count() > 1:
+                        # create maps index map
+                        #print("create maps index map")
+                        # fit canvas to Folios layer
+                        folios_layer.selectAll()
+                        self.iface.mapCanvas().zoomToSelected()
+                        # create layout
+                        ta_layout_name = DictLayout.TA_DICT_LAYOUT_PREFIX
+                        if DictLayout.layoutExists(ta_layout_name):
+                            self.__dict_layout.removeLayoutByName(ta_layout_name)
+                        full_filename = "{}/{}.qpt".format(
+                            QSettings().value("/DICT/configQPT",
+                                              os.path.join(QgsApplication.qgisSettingsDirPath(), 'composer_templates'),
+                                              type=str),
+                            ta_layout_name)
+                        self.__dict_layout.loadLayout(full_filename, ta_layout_name, ta_layout_name)
+                        # export layout to PDF
+                        self.__dict_layout.setCurrentLayoutByName(ta_layout_name)
+                        export_settings = QgsLayoutExporter.PdfExportSettings()
+                        self.__dict_layout.currentLayout().setCustomProperty('pdfSimplify', True)
+                        self.__dict_layout.currentLayout().setCustomProperty('pdfIncludeMetadata', True)
+                        self.__dict_layout.currentLayout().setCustomProperty('forceVector', True)
+                        self.__dict_layout.currentLayout().setCustomProperty('singleFile', False)
+                        self.__dict_layout.currentLayout().setCustomProperty('pdfTextFormat', True)
+
+                        # set zoom for folios
+                        self.__dict_layout.currentLayout().referenceMap().zoomToExtent(self.iface.mapCanvas().extent())
+
+                        #print(QgsApplication.layoutItemRegistry().itemTypes())
+                        # set north
+                        for li in self.__dict_layout.currentLayout().pageCollection().itemsOnPage(0):
+                            if li.type() == 65640:
+                                #print("name:", li.displayName())
+                                if li.displayName().startswith("North Arrow"):
+                                    li.setItemRotation(0)
+                                    #print("rotation:", li.itemRotation())
+                        self.__dict_layout.currentLayout().refresh()
+
+                        exporter = QgsLayoutExporter(self.__dict_layout.currentLayout())
+                        # create PDF's File
+                        full_filename = Utils.resolve("{}-{}-{}{}".format("TA", type_demande, no_teleservice, ".pdf"), target_path)
+                        # print("---- hide coverage ", atlas.hideCoverage())
+                        result = exporter.exportToPdf(full_filename, QgsLayoutExporter.PdfExportSettings())
+                        # print(target_path, type_demande, no_teleservice, str(i))
+                        if result == QgsLayoutExporter.Success:
+                            msg2 = "Tableau d'assemblage pour " + type_demande + " " + no_teleservice + " créés dans <a href=\"{}\">{}</a>".format(
+                                QUrl.fromLocalFile(target_path).toString(), QDir.toNativeSeparators(target_path))
+                            self.iface.messageBar().pushMessage(msg1, msg2, Qgis.Success, 10)
+                        else:
+                            nb_errors += 1
+                            self.iface.statusBarIface().showMessage(
+                                "Erreur à la création du tableau d'assemblage pour {} {} sur {}".format(type_demande,
+                                                                                   no_teleservice))
 
                     if nb_errors == 0:
                         msg1 = "Créer les plans PDF:"
