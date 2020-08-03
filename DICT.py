@@ -226,15 +226,6 @@ class DICT(object):
             parent = self.iface.mainWindow(),
             add_to_toolbar = False)
 
-        icon_folio_path = ':/plugins/DICT/icon_folio.png'
-        self.add_action(
-            icon_folio_path,
-            text=self.tr(u'Placer folio'),
-            callback=self.place_folio_tool,
-            parent=self.iface.mainWindow(),
-            add_to_toolbar=True,
-            add_to_menu=True)
-
         firstUse = QSettings().value("DICT/isFirstUse" , 1, type = int)
         if firstUse == 1:
             DictLayout.init_templates(True)
