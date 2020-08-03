@@ -1,9 +1,9 @@
 # -*- coding:utf-8 -*-
 '''
 /***************************************************************************
- layout.py
+ dict_layout.py
 
- Layout class allows to manage layouts for DTDICT answers
+ DictLayout class allows to manage layouts for DTDICT answers
 
 
         begin                : 2020-06-22
@@ -27,10 +27,10 @@ from .utils import Utils
 
 import os, shutil
 
-DICT_LAYOUT_PREFIX = "DICT"
-TA_DICT_LAYOUT_PREFIX = "TA_DICT"
-
 class DictLayout:
+    DICT_LAYOUT_PREFIX = "DICT"
+    TA_DICT_LAYOUT_PREFIX = "TA_DICT"
+
     def __init__(self):
         """Constructor"""
         self.__layout = None
@@ -43,7 +43,7 @@ class DictLayout:
             if not extension.lower() == ".qpt":
                 return False
 
-        if layout_name.upper().startswith(DICT_LAYOUT_PREFIX):
+        if layout_name.upper().startswith(cls.DICT_LAYOUT_PREFIX):
             return True
         else:
             return False
@@ -55,7 +55,7 @@ class DictLayout:
             if not extension.lower() == ".qpt":
                 return False
 
-        if layout_name.upper().startswith(TA_DICT_LAYOUT_PREFIX):
+        if layout_name.upper().startswith(cls.TA_DICT_LAYOUT_PREFIX):
             return True
         else:
             return False
@@ -78,16 +78,13 @@ class DictLayout:
         #print("init_templates")
         templates_dir = QSettings().value("/DICT/configQPT",
                           os.path.join(QgsApplication.qgisSettingsDirPath(), 'composer_templates'), type=str),
+        os.makedirs(templates_dir, exist_ok=True)
 
-        if not os.path.isdir(templates_dir):
-            os.mkdir(templates_dir)
+        templates = [f.name for f in os.scandir(templates_dir) if f.is_file() and (self.isDictLayoutName(f.name) or self.isTaDictLayoutName(f.name))]
+        if len(templates) == 0 or reset_all == True:
             to_copy = True
         else:
-            templates = [f.name for f in os.scandir(templates_dir) if f.is_file() and (self.isDictLayoutName(f.name) or self.isTaDictLayoutName(f.name))]
-            if len(templates) == 0 or reset_all == True:
-                to_copy = True
-            else:
-                to_copy = False
+            to_copy = False
 
         if to_copy:
             templates = [f.name for f in os.scandir(templates_dir) if f.is_file() and (self.isDictLayoutName(f.name) or self.isTaDictLayoutName(f.name))]
