@@ -48,6 +48,11 @@ class FolioGeometry(object):
         self.__loadExistingFolios(self.__layerName)
 
     @classmethod
+    def foliosLayer(cls):
+        layers = QgsProject.instance().mapLayersByName(cls.__layerName)
+        return layers[0]
+
+    @classmethod
     def layerName(cls):
         return cls.__layerName
 

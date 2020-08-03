@@ -761,9 +761,9 @@ class DICT(object):
         #print("create_pdf_maps")
         if FolioGeometry.existsFoliosLayer():
             try:
-                folios_layers = QgsProject.instance().mapLayersByName(FolioGeometry.layerName())
-                if len(folios_layers) == 1:
-                    folios_layer = folios_layers[0]
+                folios_layer = FolioGeometry.foliosLayer()
+                if folios_layer:
+                    # create folios
                     iterator = folios_layer.getFeatures()
                     feature = QgsFeature()
                     if iterator.nextFeature(feature):
