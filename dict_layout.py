@@ -257,7 +257,7 @@ class DictLayout:
             if layout.name() == layout_name:
                 self.__layout = layout
                 self.__refMap = layout.referenceMap()
-                print("setCurrentLayoutByName()", layout.name())
+                #print("setCurrentLayoutByName()", layout.name())
                 break;
 
     def setPrintScale(self, print_scale):

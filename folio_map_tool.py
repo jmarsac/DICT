@@ -66,25 +66,25 @@ class FolioMapTool(QgsMapToolEmitPoint):
         self.step = 1
 
     def setLayoutName(self, layout_name):
-        print('FolioMapTool.setLayoutName()', layout_name)
+        #print('FolioMapTool.setLayoutName()', layout_name)
         self.__layoutName = layout_name
         QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_layout_name', layout_name)
 
     def setPrintScale(self, print_scale):
-        print('FolioMapTool.setPrintScale()', print_scale)
+        #print('FolioMapTool.setPrintScale()', print_scale)
         self.__printScale = print_scale
         QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_print_scale', print_scale)
         self.updateSizePoint()
 
     def setSize(self, size_x, size_y):
-        print("FolioMapTool.setSize()", self.__size_x, self.__size_y)
+        #print("FolioMapTool.setSize()", self.__size_x, self.__size_y)
         self.__size_x = size_x
         self.__size_y = size_y
         self.updateSizePoint()
 
     def updateSizePoint(self):
         self.__sizePoint = QgsPointXY(self.__size_x * self.__printScale, self.__size_y * self.__printScale)
-        print("FolioMapTool.updateSizePoint()", self.__sizePoint.x(), self.__sizePoint.y())
+        #print("FolioMapTool.updateSizePoint()", self.__sizePoint.x(), self.__sizePoint.y())
 
     '''
     def canvasClicked(self, point, button):

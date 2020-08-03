@@ -53,7 +53,7 @@ class FolioGeometry(object):
 
     @classmethod
     def existsFoliosLayer(cls):
-        print("FolioGeometry.__layerName", cls.__layerName)
+        #print("FolioGeometry.__layerName", cls.__layerName)
         for layer in QgsProject.instance().mapLayersByName(cls.__layerName):
             return True
         return False

@@ -64,7 +64,7 @@ class DICT(object):
             application at run time.
         :type iface: QgsInterface
         """
-        print("__init__")
+        #print("__init__")
         # Save reference to the QGIS interface
         self.iface = iface
         # initialize plugin directory
@@ -195,7 +195,7 @@ class DICT(object):
         return action
 
     def initGui(self):
-        print("initGui")
+        #print("initGui")
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
         icon_configuration_path = ':/plugins/DICT/config.png'
@@ -243,7 +243,7 @@ class DICT(object):
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
-        print("unload")
+        #print("unload")
         for action in self.actions:
             self.iface.removePluginMenu(
                 self.tr('&DICT'),
@@ -254,7 +254,7 @@ class DICT(object):
 
     def run(self):
         """Run method that performs all the real work"""
-        print("run")
+        #print("run")
 
         self.dlg.setWindowFlags(Qt.WindowStaysOnTopHint)
         # set buttons icons
@@ -904,13 +904,9 @@ class DICT(object):
 
                             # create PDF's File
                             full_filename = Utils.resolve(atlas.currentFilename() + ".pdf", target_path)
-                            print("---- hide coverage ", atlas.hideCoverage())
+                            #print("---- hide coverage ", atlas.hideCoverage())
                             result = exporter.exportToPdf(full_filename, QgsLayoutExporter.PdfExportSettings())
-                            print("1")
-                            print(target_path)
-                            print(no_teleservice)
-                            print(type_demande)
-                            print("i", i)
+                            #print(target_path, type_demande, no_teleservice, str(i))
                             if result == QgsLayoutExporter.Success:
                                 self.iface.statusBarIface().showMessage("Plan #{} pour {} {} créé".format(i+1, type_demande, no_teleservice))
                             else:
