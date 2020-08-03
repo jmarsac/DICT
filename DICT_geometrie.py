@@ -22,6 +22,7 @@ class DICT_geometrie(object):
 
         msgBox = QMessageBox()
         msgBox.setTextFormat(Qt.RichText)
+        self.__layer = None
         self._epsg = epsg
         self._geom = []
         try:
@@ -49,6 +50,10 @@ class DICT_geometrie(object):
     def removeExistingGeometries(cls):
         for layer in QgsProject.instance().mapLayersByName(cls.__layerName):
             QgsProject.instance().removeMapLayer(layer.id())
+
+    @classmethod
+    def empriseLayer(cls):
+        return QgsProject.instance().mapLayersByName(cls.__layerName)[0]
 
     def addGeometrie(self):
         vl = "multipolygon?crs=epsg:" + self._epsg + "&index=yes"
