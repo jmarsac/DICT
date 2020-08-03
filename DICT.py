@@ -248,6 +248,15 @@ class DICT(object):
         #print("run")
 
         self.dlg.setWindowFlags(Qt.WindowStaysOnTopHint)
+
+        ph = self.iface.mainWindow().geometry().height()
+        pw = self.iface.mainWindow().geometry().width()
+        px = self.iface.mainWindow().geometry().x()
+        py = self.iface.mainWindow().geometry().y()
+        dw = self.dlg.width()
+        dh = self.dlg.height()
+        self.dlg.move(pw - dw, py);
+
         # set buttons icons
         if True:
             self.dlg.toolButtonPlaceFolio.setIcon(QIcon(':/plugins/DICT/icon_folio.png'))
