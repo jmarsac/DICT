@@ -121,7 +121,7 @@ class FolioGeometry(object):
         self.__memLayer.commitChanges()
         self.__memLayer.updateExtents()
         prop = self.__memLayer.renderer().symbol().symbolLayers()[0].properties()
-        prop['color'] = '0,0,255,90'
+        prop['color'] = '0,0,255,10'
         self.__memLayer.renderer().setSymbol(QgsFillSymbol.createSimple(prop))
 
         '''
