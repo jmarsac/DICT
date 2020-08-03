@@ -488,6 +488,7 @@ class DICT(object):
         titre = ""
         pdf = ""
         planPDF = []
+        self.clean_canvas()
         msgBox = QMessageBox()
         msgBox.setTextFormat(Qt.RichText)
         if len(self.dlg.lineEdit.text()) > 0:
