@@ -865,6 +865,14 @@ class DICT(object):
                     os.makedirs(target_path, exist_ok=True)
                     full_filename = Utils.resolve(self.map_filename + ".pdf", target_path)
 
+                    layer = FolioGeometry.foliosLayer()
+                    if layer:
+                        layer.setLabelsEnabled(False)
+                        layer.setOpacity(0)
+                    layer = DICT_geometrie.empriseLayer()
+                    if layer:
+                        layer.setOpacity(0)
+
                     if atlas.layout().customProperty('singleFile') == True:
                         # création un seul fichier
                         result = exporter.exportToPdf(
@@ -883,12 +891,15 @@ class DICT(object):
                             self.iface.messageBar().pushMessage(msg1, msg2, Qgis.Critical, 10)
                     else:
                         # création un fichier par folio
-                        progressMessageBar = self.iface.statusBarIface()
+                        msg1 = "Créer les plans PDF pour {} {}".format(type_demande, no_teleservice)
+                        message_bar = self.iface.messageBar()
+                        progressMessageBar = message_bar.createMessage(msg1)
                         progress = QProgressBar(progressMessageBar)
-                        progress.setMaximum(atlas.count())
+                        progress.setRange(0, atlas.count())
                         progress.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
                         progressMessageBar.layout().addWidget(progress)
-                        self.iface.statusBarIface().addPermanentWidget(progress, Qgis.Info)
+                        message_bar.pushWidget(progressMessageBar, Qgis.Info)
+                        QCoreApplication.processEvents()
                         '''
                         # Create and exporter Layout for each layout generate with Atlas
                         exporter = QgsLayoutExporter(atlas.layout())
@@ -899,8 +910,11 @@ class DICT(object):
                         atlas.first()
                         nb_errors = 0
                         for i in range(0, atlas.count()):
+                            msg2 = "Plan #{}/{} pour {} {}".format(i+1, atlas.count(), type_demande, no_teleservice)
                             progress.setValue(i)
-                            self.iface.statusBarIface().showMessage("Plan #{} sur {} pour {} {}".format(i+1, atlas.count(), type_demande, no_teleservice))
+                            progressMessageBar.setText(msg2)
+                            QCoreApplication.processEvents()
+                            self.iface.statusBarIface().showMessage(msg2)
                             exporter = QgsLayoutExporter(atlas.layout())
 
                             # create PDF's File
@@ -914,8 +928,11 @@ class DICT(object):
                                 nb_errors += 1
                                 self.iface.statusBarIface().showMessage(
                                     "Erreur à la création du plan #{} sur {} pour {} {} sur {}".format(i+1, atlas.count(), type_demande, no_teleservice))
+                            progress.setValue(i+1)
+                            QCoreApplication.processEvents()
                             atlas.next()
                         atlas.endRender()
+                        self.iface.messageBar().clearWidgets()
                         self.iface.statusBarIface().clearMessage()
                         self.iface.statusBarIface().removeWidget(progress)
 
