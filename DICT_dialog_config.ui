@@ -281,7 +281,7 @@
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QLineEdit" name="configRepXML"/>
+             <widget class="QLineEdit" name="configXML"/>
             </item>
             <item row="1" column="1">
              <widget class="QToolButton" name="toolButtonXML">
@@ -323,7 +323,7 @@
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QLineEdit" name="configRepQPT"/>
+             <widget class="QLineEdit" name="configQPT"/>
             </item>
             <item row="1" column="1">
              <widget class="QToolButton" name="toolButtonQPT">
@@ -795,7 +795,7 @@
   <tabstop>Endommagement</tabstop>
   <tabstop>configRep</tabstop>
   <tabstop>toolButton</tabstop>
-  <tabstop>configRepXML</tabstop>
+  <tabstop>configXML</tabstop>
   <tabstop>toolButtonXML</tabstop>
   <tabstop>configExtension</tabstop>
   <tabstop>casDT</tabstop>
