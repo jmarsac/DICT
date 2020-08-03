@@ -26,13 +26,13 @@ from qgis.core import *
 from qgis.gui import *
 from qgis.utils import iface
 from PyQt5.QtCore import *
-from PyQt5.QtGui import QPainter
+from PyQt5.QtGui import QPainter, QFont
 from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtWidgets import QMessageBox
 from .DICT_dialog_composer import DICTDialogComposer
 from math import ceil, pow
 from osgeo import ogr
-import os
+import os, math
 
 
 class FolioGeometry(object):
@@ -77,7 +77,7 @@ class FolioGeometry(object):
         except Exception as e:
             print(str(e))
 
-    def __addFoliosLayer(self, layer_name):
+    def __addFoliosLayer(self, layer_name, size):
         if self.__memLayer is None:
             vl = "polygon?crs=epsg:" + str(self._epsg) + "&index=yes"
             fields = QgsFields()
@@ -97,7 +97,22 @@ class FolioGeometry(object):
             prop = QgsProperty()
             prop.setField("z_rotation")
             prop_coll.setProperty(QgsPalLayerSettings.LabelRotation, prop)
+
+            font = QFont("Tahoma", 10, QFont.Normal)
+            font.setItalic(False)
+            text_format = QgsTextFormat().fromQFont(font)
+            text_format.setSize(size)
+            text_format.setSizeUnit(QgsUnitTypes.RenderMapUnits)
+            text_format.setSizeMapUnitScale(QgsMapUnitScale())
+            pal_layer.setFormat(text_format)
+
+            prop_coll.setProperty(QgsPalLayerSettings.Italic, QgsProperty.fromValue(False))
+            prop_coll.setProperty(QgsPalLayerSettings.AlwaysShow, QgsProperty.fromValue(True))
+
             pal_layer.setDataDefinedProperties(prop_coll)
+            context = QgsExpressionContext()
+            context.appendScope(QgsExpressionContextUtils.globalScope())
+            context.appendScope(QgsExpressionContextUtils.projectScope(QgsProject.instance()))
             labels = QgsVectorLayerSimpleLabeling(pal_layer)
             self.__memLayer.setLabeling(labels)
             self.__memLayer.setLabelsEnabled(True)
@@ -107,7 +122,9 @@ class FolioGeometry(object):
 
     def addFolio(self, geom, print_scale, layout, z_rotation):
         if self.__memLayer is None:
-            self.__addFoliosLayer(self.__layerName)
+            area = geom.area()
+            size = math.sqrt(area) * 0.75
+            self.__addFoliosLayer(self.__layerName, size)
 
         self.__memLayer.startEditing()
         pr = self.__memLayer.dataProvider()
