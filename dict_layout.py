@@ -21,7 +21,7 @@
  *                                                                         *
  ***************************************************************************/
  '''
-from PyQt5.QtCore import QSizeF, QFileInfo
+from PyQt5.QtCore import QSizeF, QFileInfo, QSettings
 from qgis.core import Qgis, QgsApplication, QgsProject, QgsLayout, QgsLayoutItemMap, QgsExpressionContextUtils, QgsPointXY
 from .utils import Utils
 
@@ -77,22 +77,22 @@ class DictLayout:
     def init_templates(cls, reset_all:bool=False):
         #print("init_templates")
         templates_dir = QSettings().value("/DICT/configQPT",
-                          os.path.join(QgsApplication.qgisSettingsDirPath(), 'composer_templates'), type=str),
+                          os.path.join(QgsApplication.qgisSettingsDirPath(), 'composer_templates'), type=str)
         os.makedirs(templates_dir, exist_ok=True)
 
-        templates = [f.name for f in os.scandir(templates_dir) if f.is_file() and (self.isDictLayoutName(f.name) or self.isTaDictLayoutName(f.name))]
+        templates = [f.name for f in os.scandir(templates_dir) if f.is_file() and (cls.isDictLayoutName(f.name) or cls.isTaDictLayoutName(f.name))]
         if len(templates) == 0 or reset_all == True:
             to_copy = True
         else:
             to_copy = False
 
         if to_copy:
-            templates = [f.name for f in os.scandir(templates_dir) if f.is_file() and (self.isDictLayoutName(f.name) or self.isTaDictLayoutName(f.name))]
+            templates = [f.name for f in os.scandir(templates_dir) if f.is_file() and (cls.isDictLayoutName(f.name) or cls.isTaDictLayoutName(f.name))]
             for t in templates:
                 os.remove(os.path.join(templates_dir, t))
 
             source_path = Utils.resolve('layouts')
-            templates = [f.name for f in os.scandir(source_path) if f.is_file() and (self.isDictLayoutName(f.name) or self.isTaDictLayoutName(f.name))]
+            templates = [f.name for f in os.scandir(source_path) if f.is_file() and (cls.isDictLayoutName(f.name) or cls.isTaDictLayoutName(f.name))]
             for t in templates:
                 shutil.copy2(os.path.join(source_path, t), templates_dir)
 
