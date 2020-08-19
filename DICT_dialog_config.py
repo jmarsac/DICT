@@ -52,13 +52,11 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         self.configQPT.setText(QtCore.QSettings().value(
                                 "/DICT/configQPT",
                                 os.path.join(QgsApplication.qgisSettingsDirPath(), 'composer_templates')))
-        self.configPDFTK.setText(QtCore.QSettings().value(
-                                "/DICT/configPDFTK",
-                                QtCore.QDir.homePath()))
-        self.configExtension.setText(QtCore.QSettings().value(
-                                "/DICT/configExtension"))
-        self.signSignature.setText(QtCore.QSettings().value(
-                                "/DICT/signSignature"))
+        self.configAnnexes.setText(QtCore.QSettings().value(
+                                "/DICT/configAnnexes",
+                                os.path.join(QgsApplication.qgisSettingsDirPath(), 'python/plugins/DICT/annexes')))
+
+        self.signSignature.setText(QtCore.QSettings().value("/DICT/signSignature"))
         self.signNom.setText(QtCore.QSettings().value("/DICT/signNom"))
         self.respTel.setText(QtCore.QSettings().value("/DICT/respTel"))
         self.respService.setText(QtCore.QSettings().value("/DICT/respService"))
@@ -83,10 +81,6 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         self.sufPlan.setText(QtCore.QSettings().value("/DICT/sufPlan"))
         self.Endommagement.setText(QtCore.QSettings().value(
                                 "/DICT/Endommagement"))
-        if QtCore.QSettings().value("/DICT/casDT"):
-            self.casDT.setChecked(True)
-        else:
-            self.casDT.setChecked(False)
 
         if QtCore.QSettings().value("/DICT/fusionPDF"):
             self.fusionPDF.setChecked(True)
@@ -99,8 +93,8 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
             lambda: self.showDialogConfig(self.configXML))
         self.toolButtonQPT.pressed.connect(
             lambda: self.showDialogConfig(self.configQPT))
-        self.toolButtonPDFTK.pressed.connect(
-            lambda: self.showDialogConfig(self.configPDFTK, "Executable"))
+        self.toolButtonAnnexes.pressed.connect(
+            lambda: self.showDialogConfig(self.configAnnexes))
 
         self.okButton = self.button_box.button(QtWidgets.QDialogButtonBox.Ok)
         self.okButton.clicked.connect(self.accept)
@@ -153,10 +147,8 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         self.rep(self.configRep, "configRep")
         self.rep(self.configXML, "configXML")
         self.rep(self.configQPT, "configQPT")
-        self.rep(self.configPDFTK, "configPDFTK")
+        self.rep(self.configAnnexes, "configAnnexes")
 
-        QtCore.QSettings().setValue("/DICT/configExtension",
-                                    self.configExtension.text())
         QtCore.QSettings().setValue("/DICT/signSignature",
                                     self.signSignature.text())
         QtCore.QSettings().setValue("/DICT/signNom", self.signNom.text())
@@ -183,7 +175,6 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         QtCore.QSettings().setValue("/DICT/sufRecep", self.sufRecep.text())
         QtCore.QSettings().setValue("/DICT/prefPlan", self.prefPlan.text())
         QtCore.QSettings().setValue("/DICT/sufPlan", self.sufPlan.text())
-        QtCore.QSettings().setValue("/DICT/casDT", self.casDT.isChecked())
 
         QtCore.QSettings().setValue("/DICT/fusionPDF",
                                     self.fusionPDF.isChecked())
