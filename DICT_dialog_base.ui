@@ -26,7 +26,7 @@
     <enum>Qt::Horizontal</enum>
    </property>
    <property name="standardButtons">
-    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Save</set>
    </property>
   </widget>
   <widget class="QGroupBox" name="groupBoxDemande">
@@ -307,7 +307,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>icon_form_cerfa.png</normaloff>icon_form_cerfa.png</iconset>
+     <normaloff>icon_edit_form.png</normaloff>icon_edit_form.png</iconset>
    </property>
    <property name="iconSize">
     <size>
@@ -333,7 +333,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>icon_purge.png</normaloff>icon_purge.png</iconset>
+     <normaloff>icon_clean_canvas.png</normaloff>icon_clean_canvas.png</iconset>
    </property>
    <property name="iconSize">
     <size>
@@ -360,6 +360,32 @@
    <property name="icon">
     <iconset>
      <normaloff>icon_maps.png</normaloff>icon_maps.png</iconset>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>32</width>
+     <height>32</height>
+    </size>
+   </property>
+  </widget>
+  <widget class="QToolButton" name="toolButtonCleanFolios">
+   <property name="geometry">
+    <rect>
+     <x>70</x>
+     <y>250</y>
+     <width>40</width>
+     <height>40</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Supprimer les folios</string>
+   </property>
+   <property name="text">
+    <string>FO</string>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>icon_purge_folios.png</normaloff>icon_purge_folios.png</iconset>
    </property>
    <property name="iconSize">
     <size>
