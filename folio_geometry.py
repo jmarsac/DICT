@@ -136,6 +136,15 @@ class FolioGeometry(object):
         self._features[0].setAttribute(0, layout)
         self._features[0].setAttribute(1, print_scale)
         self._features[0].setAttribute(2, z_rotation)
+
+        layerCRSSrsid = self.__memLayer.crs().authid()
+        projectCRSSrsid = iface.mapCanvas().mapSettings().destinationCrs().authid()
+
+        sourceCrs = QgsCoordinateReferenceSystem(projectCRSSrsid)
+        targetCrs = QgsCoordinateReferenceSystem(layerCRSSrsid)
+        tr = QgsCoordinateTransform(sourceCrs, targetCrs, QgsProject.instance())
+        geom.transform(tr)
+
         self._features[nb].setGeometry(geom)
         nb += 1
 
@@ -147,15 +156,6 @@ class FolioGeometry(object):
         self.__memLayer.renderer().setSymbol(QgsFillSymbol.createSimple(prop))
 
         '''
-        layerCRSSrsid = mem_layer.crs().authid()
-        mc = iface.mapCanvas()
-        projectCRSSrsid = mc.mapSettings().destinationCrs().authid()
-
-        sourceCrs = QgsCoordinateReferenceSystem(layerCRSSrsid)
-        destCrs = QgsCoordinateReferenceSystem(projectCRSSrsid)
-        tr = QgsCoordinateTransform(sourceCrs, destCrs, QgsProject.instance())
-        geomBB = QgsGeometry.fromRect(mem_layer.extent())
-        geomBB.transform(tr)
         self._geomBB = geomBB.boundingBox()
         mc.setExtent(self._geomBB)
         mc.zoomScale(mc.scale() * 2)
