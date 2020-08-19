@@ -998,7 +998,7 @@ class DICT(object):
                 else:
                     dict_email.buildAndSendMail("tcidtD88*$", self.__dico_declarant["dec_email"], self.iface)
 
-            self.clean_canvas()
+            self.dlg.lineEdit.setText("")
 
     def is_file_to_zip(self, filename):
         if filename[-4:].lower() in [".zip", ".fdf"]:
@@ -1021,7 +1021,6 @@ class DICT(object):
             zip_obj.close()
 
     def add_or_update_reponses_feature(self, en_cours_layer, reponses_layer, no_teleservice, geom):
-        print(no_teleservice)
         if no_teleservice:
             id = None
             fea_iter = en_cours_layer.getFeatures('"no_teleservice" = \'{}\''.format(no_teleservice))
@@ -1029,19 +1028,15 @@ class DICT(object):
                 feature = QgsFeature()
                 if fea_iter.nextFeature(feature):
                     id = feature.id()
-                    print("id", id)
                 fea_iter.close()
             if id:
                 i = reponses_layer.fields().indexFromName('en_cour_id')
-                print("i", i)
                 if i >= 0:
                     if QgsVectorLayerUtils.valueExists(reponses_layer, i, id):
                         fea_iter = reponses_layer.getFeatures('"en_cour_id" = {}'.format(id))
                         if fea_iter.isValid():
-                            print("iter is valid")
                             feature = QgsFeature()
                             if fea_iter.nextFeature(feature):
-                                print("update")
                                 self.update_reponses_feature(reponses_layer, feature, geom)
                                 fea_iter.close()
                             else:
@@ -1089,7 +1084,7 @@ class DICT(object):
                 if not footprint:
                     footprint = feature.geometry()
                 else:
-                    footprint.combine(feature.geometry())
+                    footprint = footprint.combine(feature.geometry())
         return footprint
 
 
@@ -1420,6 +1415,22 @@ class DICT(object):
                     layer = DICT_geometrie.empriseLayer()
                     if layer:
                         layer.setOpacity(1)
+
+                    # emprise des folios dans reponses
+                    footprint = self.folios_footprint(no_teleservice)
+                    if footprint:
+                        layers = QgsProject.instance().mapLayersByName("reponses")
+                        if len(layers):
+                            reponses_layer = layers[0]
+                        else:
+                            reponses_layer = None
+                        layers = QgsProject.instance().mapLayersByName("en_cours")
+                        if len(layers):
+                            en_cours_layer = layers[0]
+                        else:
+                            en_cours_layer = None
+                        if en_cours_layer and reponses_layer:
+                            self.add_or_update_reponses_feature(en_cours_layer, reponses_layer, no_teleservice, footprint)
 
                     # création du taleau d'assemblage
                     if atlas.count() > 1:
