@@ -3,12 +3,7 @@
 
 from qgis.core import Qgis
 from qgis.utils import iface
-from xml.dom import minidom
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import QMessageBox
 from .DICT_geometrie import DICT_geometrie
-from .DICT_dialog_wizard import DICTDialogWizard
 
 from .xml_consultation_reseaux import XmlConsultationReseaux
 
@@ -21,10 +16,8 @@ import subprocess
 
 class DICT_xml(object):
     def __init__(self, xml_file):
-        msgBox = QMessageBox()
-        msgBox.setTextFormat(Qt.RichText)
-
         self.xml_demande = XmlConsultationReseaux()
+        self.xml_filename = xml_file
 
         if self.xml_demande.open(xml_file) in ["DT", "DICT", "DC", "ATU"]:
             #print(self.xml_demande.type_demande(), self.xml_demande.no_teleservice())
@@ -42,16 +35,15 @@ class DICT_xml(object):
                 self.taillePlan = "A4"
             # Dessine la géométrie
             err_msg = "Erreur analyse XML"
-            self.geom = DICT_geometrie(self.xml_demande.emprise_gml_geom(),self.xml_demande.emprise_epsg())
+            self.__geom = DICT_geometrie(self.xml_demande.emprise_gml_geom(), self.xml_demande.emprise_epsg())
             err_msg = "Erreur suppression emprises existantes"
-            self.geom.removeExistingGeometries()
-            err_msg = "Erreur ajout géométrie"
-            self.geom.addGeometrie()
+            self.__geom.removeExistingGeometries()
+            err_msg = "Erreur ajout emprise"
+            self.__geom.addFeature(self.xml_demande.type_demande(), self.xml_demande.no_teleservice())
         except Exception as e:
-            iface.messageBar().pushMessage(err_msg, str(e), Qgis.Info )
-            msgBox.setText(err_msg)
-            msgBox.exec_()
+            iface.messageBar().pushMessage(err_msg, str(e), Qgis.Critical)
             return
 
-    def geometriePDF(self, titre):
-        return self.geom.geometriePDF(titre, self._taillePlan)
+    def geometry(self):
+        return self.__geom.empriseGeometry()
+
