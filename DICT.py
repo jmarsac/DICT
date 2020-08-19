@@ -722,6 +722,7 @@ class DICT(object):
         self.iface.mapCanvas().setMapTool(self.pointTool)
 
     def edit_cerfa(self):
+        self.iface.actionIdentify().trigger()
         source_path = os.path.join(os.path.dirname(__file__), "formulaire_pdf")
         source_pdf_form = os.path.join(source_path, 'cerfa_14435-04.pdf')
         target_path = Utils.expandVariablesInString(QSettings().value("/DICT/configRep"), True)
@@ -768,6 +769,7 @@ class DICT(object):
 
     def create_pdf_maps(self):
         #print("create_pdf_maps")
+        self.iface.actionIdentify().trigger()
         if FolioGeometry.existsFoliosLayer():
             try:
                 folios_layer = FolioGeometry.foliosLayer()
