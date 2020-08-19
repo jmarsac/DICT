@@ -26,6 +26,8 @@ from PyQt5.QtCore import (QSettings, QTranslator, qVersion,
 from PyQt5.QtWidgets import QAction, QMessageBox, QDialogButtonBox, QProgressBar
 from PyQt5.QtGui import QIcon, QDesktopServices
 
+from zipfile import  *
+
 from qgis.core import Qgis, QgsApplication, QgsUserProfile, QgsProject, QgsPointXY, QgsExpressionContextUtils, QgsVectorLayer \
     , QgsCoordinateTransform, QgsFeature, QgsWkbTypes, QgsGeometry \
     , QgsVectorLayerUtils, QgsLayoutItemMap, QgsLayoutExporter, QgsCoordinateReferenceSystem
@@ -36,6 +38,7 @@ from . import resources
 from .DICT_about import DICTAbout
 from .DICT_dialog import DICTDialog
 from .DICT_dialog_config import DICTDialogConfig
+from .DICT_dialog_cloture import DICTDialogCloture
 from .DICT_xml import DICT_xml
 from .DICT_geometrie import DICT_geometrie
 from .dict_layout import DictLayout
@@ -43,6 +46,7 @@ from .fdf_buffer import FdfBuffer
 from .folio_geometry import FolioGeometry
 from .folio_map_tool import FolioMapTool
 from .utils import Utils
+from .dict_email import DictEmail
 
 import os
 import sys
@@ -86,6 +90,7 @@ class DICT(object):
         # Create the dialog (after translation) and keep reference
         self.dlg = DICTDialog()
         self.dlgConfig = DICTDialogConfig()
+        self.dlgCloture = DICTDialogCloture()
 
         # Declare instance attributes
         self.actions = []
@@ -272,6 +277,9 @@ class DICT(object):
         self.dlg.toolButtonCreateMaps.clicked.connect(self.create_pdf_maps)
         self.dlg.toolButtonEditForm.clicked.connect(self.edit_cerfa)
         self.dlg.toolButtonCleanCanvas.clicked.connect(self.clean_canvas)
+
+        self.dlg.button_box.button(QDialogButtonBox.Save).clicked.connect(self.dialog_cloturer)
+        self.dlgCloture.buttonBox.button(QDialogButtonBox.Save).clicked.connect(self.cloturer)
 
         self.dlg.lineEdit.textChanged.connect(self.on_lineedit_text_changed)
         self.dlg.comboBoxPrintScale.currentTextChanged.connect(self.on_comboboxprintscale_text_changed)
@@ -508,6 +516,20 @@ class DICT(object):
         if len(self.dlg.lineEdit.text()) > 0:
             self.__dtdict = DICT_xml(self.dlg.lineEdit.text())
 
+            layers = QgsProject.instance().mapLayersByName("en_cours")
+            if len(layers):
+                en_cours_layer = layers[0]
+                src_layer = DICT_geometrie.empriseLayer()
+                if isinstance(en_cours_layer, QgsVectorLayer):
+                    sourceCRSSrsid = src_layer.crs().authid()
+                    targetCRSSrsid = en_cours_layer.crs().authid()
+                    sourceCrs = QgsCoordinateReferenceSystem(sourceCRSSrsid)
+                    targetCrs = QgsCoordinateReferenceSystem(targetCRSSrsid)
+                    tr = QgsCoordinateTransform(sourceCrs, targetCrs, QgsProject.instance())
+                    geom =  self.__dtdict.geometry()
+                    geom.transform(tr)
+                    self.add_or_update_en_cours_feature(en_cours_layer, self.__dtdict.xml_demande.dictionnaire(), geom)
+
             QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_fullfilename', self.dlg.lineEdit.text())
 
             QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_type_demande', self.__dtdict.xml_demande.type_demande())
@@ -718,6 +740,407 @@ class DICT(object):
         else:
             opener ="open" if sys.platform == "darwin" else "xdg-open"
             subprocess.call([opener, fullfilename])
+
+    def __add_attribute_to_feature_dict(self, layer, feature_dict, dico, attribute_name):
+        if attribute_name in dico:
+            i = layer.fields().indexFromName(attribute_name)
+            if i >= 0:
+                feature_dict.update({i: dico[attribute_name]})
+
+    def create_feature_dict_attributes(self, layer, dico):
+        feature_dict = dict()
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'no_teleservice')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'type_demande')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'tvx_commune')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'tvx_code_insee')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'tvx_adresse')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'tvx_description')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'dec_denomination')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'dec_type_entite')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'dec_siret')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'dec_adresse2')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'dec_no_voie')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'dec_lieudit_bp')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'dec_code_postal')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'dec_commune')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'dec_pays')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'dec_contact')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'dec_email')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'dec_tel')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'dec_fax')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'dec_affaire')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'exp_raison_sociale')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'exp_contact')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'exp_no_voie')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'exp_adresse2')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'exp_lieudit_bp')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'exp_code_postal')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'exp_commune')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'exp_telephone')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'exp_fax')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'exp_representant')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'exp_tel_modif')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'exp_tel_dommage')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'exp_resp_dossier')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'exp_signataire')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'declaration_at')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'reception_at')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'transmission_at')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'retour_at')
+        self.__add_attribute_to_feature_dict(layer, feature_dict, dico, 'reponse_at')
+        return feature_dict
+
+    def __add_changed_attribute_to_feature_dict(self, layer, feature, feature_dict, old_dico, dico, attribute_name):
+        if attribute_name in dico:
+            i = layer.fields().indexFromName(attribute_name)
+            if i >= 0 and feature.attribute(i) != dico[attribute_name]:
+                old_dico.update({i: feature.attribute(i)})
+                feature_dict.update({i: dico[attribute_name]})
+
+    def __add_changed_attribute_value_to_feature_dict(self, layer, feature, feature_dict, old_dico, attribute_value, attribute_name):
+        i = layer.fields().indexFromName(attribute_name)
+        if i >= 0 and feature.attribute(i) != attribute_value:
+                old_dico.update({i: feature.attribute(i)})
+                feature_dict.update({i: attribute_value})
+
+    def create_feature_dict_changed_attributes(self, layer, feature, dico):
+        feature_dict = dict()
+        old_values_dico = dict()
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'no_teleservice')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'type_demande')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'tvx_commune')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'tvx_code_insee')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'tvx_adresse')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'tvx_description')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'dec_denomination')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'dec_type_entite')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'dec_siret')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'dec_adresse2')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'dec_no_voie')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'dec_lieudit_bp')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'dec_code_postal')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'dec_commune')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'dec_pays')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'dec_contact')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'dec_email')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'dec_tel')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'dec_fax')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'dec_affaire')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'exp_raison_sociale')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'exp_contact')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'exp_no_voie')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'exp_adresse2')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'exp_lieudit_bp')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'exp_code_postal')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'exp_commune')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'exp_telephone')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'exp_fax')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'exp_representant')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'exp_tel_modif')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'exp_tel_dommage')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'exp_resp_dossier')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'exp_signataire')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'declaration_at')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'reception_at')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'transmission_at')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'retour_at')
+        self.__add_changed_attribute_to_feature_dict(layer, feature, feature_dict, old_values_dico, dico, 'reponse_at')
+        return feature_dict, old_values_dico
+
+    def __set_attribute_from_dictionary(self, feature, dico, attribute_name):
+        if attribute_name in dico:
+            feature.setAttribute(attribute_name, dico[attribute_name])
+
+    def set_en_cours_feature_attributes(self, feature, dico):
+        self.__set_attribute_from_dictionary(feature, dico, 'no_teleservice')
+        self.__set_attribute_from_dictionary(feature, dico, 'type_demande')
+        self.__set_attribute_from_dictionary(feature, dico, 'tvx_commune')
+        self.__set_attribute_from_dictionary(feature, dico, 'tvx_code_insee')
+        self.__set_attribute_from_dictionary(feature, dico, 'tvx_adresse')
+        self.__set_attribute_from_dictionary(feature, dico, 'tvx_description')
+        self.__set_attribute_from_dictionary(feature, dico, 'dec_denomination')
+        self.__set_attribute_from_dictionary(feature, dico, 'dec_type_entite')
+        self.__set_attribute_from_dictionary(feature, dico, 'dec_siret')
+        self.__set_attribute_from_dictionary(feature, dico, 'dec_adresse2')
+        self.__set_attribute_from_dictionary(feature, dico, 'dec_no_voie')
+        self.__set_attribute_from_dictionary(feature, dico, 'dec_lieudit_bp')
+        self.__set_attribute_from_dictionary(feature, dico, 'dec_code_postal')
+        self.__set_attribute_from_dictionary(feature, dico, 'dec_commune')
+        self.__set_attribute_from_dictionary(feature, dico, 'dec_pays')
+        self.__set_attribute_from_dictionary(feature, dico, 'dec_contact')
+        self.__set_attribute_from_dictionary(feature, dico, 'dec_email')
+        self.__set_attribute_from_dictionary(feature, dico, 'dec_tel')
+        self.__set_attribute_from_dictionary(feature, dico, 'dec_fax')
+        self.__set_attribute_from_dictionary(feature, dico, 'dec_affaire')
+        self.__set_attribute_from_dictionary(feature, dico, 'exp_raison_sociale')
+        self.__set_attribute_from_dictionary(feature, dico, 'exp_contact')
+        self.__set_attribute_from_dictionary(feature, dico, 'exp_no_voie')
+        self.__set_attribute_from_dictionary(feature, dico, 'exp_adresse2')
+        self.__set_attribute_from_dictionary(feature, dico, 'exp_lieudit_bp')
+        self.__set_attribute_from_dictionary(feature, dico, 'exp_code_postal')
+        self.__set_attribute_from_dictionary(feature, dico, 'exp_commune')
+        self.__set_attribute_from_dictionary(feature, dico, 'exp_telephone')
+        self.__set_attribute_from_dictionary(feature, dico, 'exp_fax')
+        self.__set_attribute_from_dictionary(feature, dico, 'exp_representant')
+        self.__set_attribute_from_dictionary(feature, dico, 'exp_tel_modif')
+        self.__set_attribute_from_dictionary(feature, dico, 'exp_tel_dommage')
+        self.__set_attribute_from_dictionary(feature, dico, 'exp_resp_dossier')
+        self.__set_attribute_from_dictionary(feature, dico, 'exp_signataire')
+        self.__set_attribute_from_dictionary(feature, dico, 'declaration_at')
+        self.__set_attribute_from_dictionary(feature, dico, 'reception_at')
+        self.__set_attribute_from_dictionary(feature, dico, 'transmission_at')
+        self.__set_attribute_from_dictionary(feature, dico, 'retour_at')
+        self.__set_attribute_from_dictionary(feature, dico, 'reponse_at')
+
+    def add_or_update_en_cours_feature(self, layer, dico, geom, create: bool=True):
+        i = layer.fields().indexFromName('no_teleservice')
+        no_teleservice = self.__dtdict.xml_demande.no_teleservice()
+        if no_teleservice:
+            if i >= 0:
+                if QgsVectorLayerUtils.valueExists(layer, i, no_teleservice):
+                    fea_iter = layer.getFeatures('"no_teleservice" = \'{}\''.format(no_teleservice))
+                    if fea_iter.isValid():
+                        feature = QgsFeature()
+                        if fea_iter.nextFeature(feature):
+                            self.update_en_cours_feature(layer, feature, dico, geom)
+                    fea_iter.close()
+                else:
+                    self.add_en_cours_feature(layer, dico, geom)
+
+    def add_en_cours_feature(self, layer, dico, geom, refresh: bool=False):
+        feature_dict = self.create_feature_dict_attributes(layer, dico)
+        i = layer.fields().indexFromName('filename')
+        if i >= 0:
+            filename = os.path.basename(self.__dtdict.xml_filename)
+            feature_dict.update({i: filename})
+        feature = QgsVectorLayerUtils.createFeature(layer, geom, feature_dict)
+        if True:
+            (res, outFeats) = layer.dataProvider().addFeatures([feature])
+
+        if refresh == True:
+            # If caching is enabled, a simple canvas refresh might not be sufficient
+            # to trigger a redraw and you must clear the cached image for the layer
+            if self.iface.mapCanvas().isCachingEnabled():
+                layer.triggerRepaint()
+            else:
+                self.iface.mapCanvas().refresh()
+
+    def update_en_cours_feature(self, layer, feature, dico, geom, refresh: bool=False):
+        new_dico, old_dico = self.create_feature_dict_changed_attributes(layer, feature, dico)
+        geom_changed = True if geom != feature.geometry() else False
+        if len(new_dico) or geom_changed:
+            layer.startEditing()
+            if len(new_dico):
+                layer.changeAttributeValues(feature.id(), new_dico, old_dico)
+            if geom_changed:
+                layer.changeGeometry(feature.id(), geom)
+            layer.commitChanges()
+            if refresh == True:
+                # If caching is enabled, a simple canvas refresh might not be sufficient
+                # to trigger a redraw and you must clear the cached image for the layer
+                if self.iface.mapCanvas().isCachingEnabled():
+                    layer.triggerRepaint()
+                else:
+                    self.iface.mapCanvas().refresh()
+
+    def cloturer(self):
+        annexes_path = Utils.expandVariablesInString(QSettings().value("/DICT/configAnnexes"), True)
+        target_path = Utils.expandVariablesInString(QSettings().value("/DICT/configRep"), True)
+        try:
+            for filename in os.listdir(annexes_path):
+                shutil.copy2(os.path.join(annexes_path, filename), target_path)
+        except:
+            pass
+
+        layers = QgsProject.instance().mapLayersByName("en_cours")
+        if len(layers):
+            en_cours_layer = layers[0]
+        if en_cours_layer:
+            new_dico = {}
+            old_dico = {}
+            self.__add_changed_attribute_value_to_feature_dict(en_cours_layer, self.__current_feature, new_dico, old_dico, "re", "etat")
+            attribute_value = self.dlgCloture.mDateTimeEditDeclaration.dateTime()
+            self.__add_changed_attribute_value_to_feature_dict(en_cours_layer, self.__current_feature, new_dico, old_dico, attribute_value, "declaration_at")
+            date_reception = self.dlgCloture.mDateTimeEditReception.dateTime()
+            self.__add_changed_attribute_value_to_feature_dict(en_cours_layer, self.__current_feature, new_dico, old_dico, date_reception, "reception_at")
+            attribute_value = self.dlgCloture.mDateTimeEditTransmission.dateTime()
+            self.__add_changed_attribute_value_to_feature_dict(en_cours_layer, self.__current_feature, new_dico, old_dico, attribute_value, "transmission_at")
+            attribute_value = self.dlgCloture.mDateTimeEditRetour.dateTime()
+            self.__add_changed_attribute_value_to_feature_dict(en_cours_layer, self.__current_feature, new_dico, old_dico, attribute_value, "retour_at")
+            date_reponse = self.dlgCloture.mDateTimeEditReponse.dateTime()
+            self.__add_changed_attribute_value_to_feature_dict(en_cours_layer, self.__current_feature, new_dico, old_dico, date_reponse, "reponse_at")
+            if len(new_dico):
+                en_cours_layer.startEditing()
+                en_cours_layer.changeAttributeValues(self.__current_feature.id(), new_dico, old_dico)
+                en_cours_layer.commitChanges()
+            duree = date_reception.daysTo(date_reponse)
+            if duree == 0:
+                msg1 = "Dossier {} clôturé dans la journée".format(self.__current_feature.attribute("type_demande"))
+            elif duree == 1:
+                msg1 = "Dossier {} clôturé en un jour".format(self.__current_feature.attribute("type_demande"))
+            else:
+                msg1 = "Dossier {} clôturé en {} jours".format(self.__current_feature.attribute("type_demande"), duree)
+            msg2 = "{} {}".format( self.__current_feature.attribute("no_teleservice"), self.__current_feature.attribute("tvx_description"))
+            msg2 += " (<a href=\"{}\">{}</a>".format(
+                QUrl.fromLocalFile(target_path).toString(), QDir.toNativeSeparators(target_path))
+            self.iface.messageBar().pushMessage(msg1, msg2, Qgis.Success, 10)
+            self.zip_files_in_dir(target_path, os.path.join(target_path, self.__current_feature.attribute("no_teleservice"))+".zip")
+            # envoi mail
+            dict_email = DictEmail('mail.gandi.net', 587, "dtdict@smdev.fr")
+            dict_email.setSubject("Récépissé {} {}".format(self.__current_feature.attribute("type_demande"), self.__current_feature.attribute("no_teleservice")))
+            if "tvx_description" in self.__dico_declarant:
+                dict_email.setReference("Travaux: {}".format(self.__current_feature.attribute("tvx_description")))
+            if "dec_email" in self.__dico_declarant:
+                hyperlink = "https://dtdict.smdev.fr/reponses/{0}/{0}.zip".format(self.__current_feature.attribute("no_teleservice"))
+                dict_email.setHyperlink(hyperlink)
+                if "dec_contact" in self.__dico_declarant:
+                    dict_email.buildAndSendMail("tcidtD88*$", self.__dico_declarant["dec_email"], self.iface, self.__dico_declarant["dec_contact"])
+                else:
+                    dict_email.buildAndSendMail("tcidtD88*$", self.__dico_declarant["dec_email"], self.iface)
+
+            self.dlg.lineEdit.setText("")
+
+    def is_file_to_zip(self, filename):
+        if filename[-4:].lower() in [".zip", ".fdf"]:
+            return False
+        return True
+
+    def zip_files_in_dir(self, dir_name, zip_file_name, del_zipped:bool=False, del_zip:bool=True):
+        if del_zip and os.path.exists(zip_file_name):
+            os.remove(zip_file_name)
+        with ZipFile(zip_file_name, 'w') as zip_obj:
+            # Iterate over all the files in directory
+            for filename in os.listdir(dir_name):
+                if self.is_file_to_zip(filename):
+                    # create complete filepath of file in directory
+                    file_path = os.path.join(dir_name, filename)
+                    # Add file to zip
+                    zip_obj.write(file_path, os.path.basename(file_path))
+                    if del_zipped:
+                        os.remove(file_path)
+            zip_obj.close()
+
+    def add_or_update_reponses_feature(self, en_cours_layer, reponses_layer, no_teleservice, geom):
+        if no_teleservice:
+            id = None
+            fea_iter = en_cours_layer.getFeatures('"no_teleservice" = \'{}\''.format(no_teleservice))
+            if fea_iter.isValid():
+                feature = QgsFeature()
+                if fea_iter.nextFeature(feature):
+                    id = feature.id()
+                fea_iter.close()
+            if id:
+                i = reponses_layer.fields().indexFromName('en_cour_id')
+                if i >= 0:
+                    if QgsVectorLayerUtils.valueExists(reponses_layer, i, id):
+                        fea_iter = reponses_layer.getFeatures('"en_cour_id" = {}'.format(id))
+                        if fea_iter.isValid():
+                            feature = QgsFeature()
+                            if fea_iter.nextFeature(feature):
+                                self.update_reponses_feature(reponses_layer, feature, geom)
+                                fea_iter.close()
+                            else:
+                                print("???")
+                    else:
+                        print("add")
+                        self.add_reponses_feature(reponses_layer, id, geom)
+
+    def add_reponses_feature(self, layer, id, geom, refresh: bool=False):
+        feature_dict = {}
+        i = layer.fields().indexFromName('en_cour_id')
+        if i >= 0:
+            feature_dict.update({i: id})
+        feature = QgsVectorLayerUtils.createFeature(layer, geom, feature_dict)
+        if True:
+            (res, outFeats) = layer.dataProvider().addFeatures([feature])
+
+        if refresh == True:
+            # If caching is enabled, a simple canvas refresh might not be sufficient
+            # to trigger a redraw and you must clear the cached image for the layer
+            if self.iface.mapCanvas().isCachingEnabled():
+                layer.triggerRepaint()
+            else:
+                self.iface.mapCanvas().refresh()
+
+    def update_reponses_feature(self, layer, feature, geom, refresh: bool=False):
+        geom_changed = True if geom != feature.geometry() else False
+        if geom_changed:
+            layer.startEditing()
+            layer.changeGeometry(feature.id(), geom)
+            layer.commitChanges()
+            if refresh == True:
+                # If caching is enabled, a simple canvas refresh might not be sufficient
+                # to trigger a redraw and you must clear the cached image for the layer
+                if self.iface.mapCanvas().isCachingEnabled():
+                    layer.triggerRepaint()
+                else:
+                    self.iface.mapCanvas().refresh()
+
+    def folios_footprint(self, no_teleservice):
+        layer = FolioGeometry.foliosLayer()
+        if layer:
+            footprint = None
+            for feature in layer.getFeatures():
+                if not footprint:
+                    footprint = feature.geometry()
+                else:
+                    footprint = footprint.combine(feature.geometry())
+        return footprint
+
+
+    def dialog_cloturer(self):
+        mem_layer = DICT_geometrie.empriseLayer()
+        layers = QgsProject.instance().mapLayersByName("en_cours")
+        if len(layers):
+            en_cours_layer = layers[0]
+        else:
+            en_cours_layer = None
+        no_teleservice = None
+        self.__current_feature = None
+        if mem_layer and en_cours_layer:
+            fea_iter = mem_layer.getFeatures()
+            if fea_iter.isValid():
+                feature = QgsFeature()
+                if fea_iter.nextFeature(feature):
+                    no_teleservice = feature.attribute("no_teleservice")
+        if no_teleservice:
+            i = en_cours_layer.fields().indexFromName('no_teleservice')
+            if i >= 0:
+                fea_iter = en_cours_layer.getFeatures('"no_teleservice" = \'{}\''.format(no_teleservice))
+                if fea_iter.isValid():
+                    feature = QgsFeature()
+                    if fea_iter.nextFeature(feature):
+                        self.__current_feature = feature
+                    else:
+                        self.__current_feature = None
+                fea_iter.close()
+        if self.__current_feature:
+            self.dlgCloture.mDateTimeEditDeclaration.clear()
+            self.dlgCloture.mDateTimeEditReception.clear()
+            self.dlgCloture.mDateTimeEditTransmission.clear()
+            self.dlgCloture.mDateTimeEditRetour.clear()
+            self.dlgCloture.mDateTimeEditReponse.clear()
+            if self.__current_feature.attribute("declaration_at"):
+                self.dlgCloture.mDateTimeEditDeclaration.setDateTime(self.__current_feature.attribute("declaration_at"))
+                self.dlgCloture.mDateTimeEditReception.setDateTime(self.__current_feature.attribute("declaration_at"))
+
+            if self.__current_feature.attribute("reception_at"):
+                self.dlgCloture.mDateTimeEditReception.setDateTime(self.__current_feature.attribute("reception_at"))
+
+            if self.__current_feature.attribute("transmission_at"):
+                self.dlgCloture.mDateTimeEditTransmission.setDateTime(self.__current_feature.attribute("transmission_at"))
+
+            if self.__current_feature.attribute("retour_at"):
+                self.dlgCloture.mDateTimeEditRetour.setDateTime(self.__current_feature.attribute("retour_at"))
+
+            if self.__current_feature.attribute("reponse_at"):
+                self.dlgCloture.mDateTimeEditReponse.setDateTime(self.__current_feature.attribute("reponse_at"))
+            else:
+                self.dlgCloture.mDateTimeEditReponse.setDateTime(QDateTime.currentDateTime())
+
+            self.dlgCloture.setModal(True)
+
+            self.dlgCloture.show()
 
     def place_folio_tool(self):
         #print('place_folio_tool')
@@ -992,6 +1415,22 @@ class DICT(object):
                     layer = DICT_geometrie.empriseLayer()
                     if layer:
                         layer.setOpacity(1)
+
+                    # emprise des folios dans reponses
+                    footprint = self.folios_footprint(no_teleservice)
+                    if footprint:
+                        layers = QgsProject.instance().mapLayersByName("reponses")
+                        if len(layers):
+                            reponses_layer = layers[0]
+                        else:
+                            reponses_layer = None
+                        layers = QgsProject.instance().mapLayersByName("en_cours")
+                        if len(layers):
+                            en_cours_layer = layers[0]
+                        else:
+                            en_cours_layer = None
+                        if en_cours_layer and reponses_layer:
+                            self.add_or_update_reponses_feature(en_cours_layer, reponses_layer, no_teleservice, footprint)
 
                     # création du taleau d'assemblage
                     if atlas.count() > 1:
