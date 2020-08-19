@@ -22,13 +22,13 @@
 """
 from PyQt5.QtCore import (QSettings, QTranslator, qVersion,
                           QCoreApplication, QDir, QFileInfo,
-                          QFile, Qt, QUrl)
-from PyQt5.QtWidgets import QAction, QMessageBox, QDialog, QProgressBar
+                          QDate, QDateTime, Qt, QVariant, QUrl)
+from PyQt5.QtWidgets import QAction, QMessageBox, QDialogButtonBox, QProgressBar
 from PyQt5.QtGui import QIcon, QDesktopServices
 
-from qgis.core import Qgis, QgsApplication, QgsProject, QgsPointXY, QgsExpressionContextUtils, QgsVectorLayer \
-    , QgsFeatureRequest, QgsFeature \
-    , QgsLayoutAtlas, QgsLayoutItemMap, QgsLayoutExporter
+from qgis.core import Qgis, QgsApplication, QgsUserProfile, QgsProject, QgsPointXY, QgsExpressionContextUtils, QgsVectorLayer \
+    , QgsCoordinateTransform, QgsFeature, QgsWkbTypes, QgsGeometry \
+    , QgsVectorLayerUtils, QgsLayoutItemMap, QgsLayoutExporter, QgsCoordinateReferenceSystem
 
 # Initialize Qt resources from file resources.py
 from . import resources
@@ -95,6 +95,7 @@ class DICT(object):
         self.toolbar.setObjectName('DICT')
 
         self.__dtdict = None
+        self.filename = None
 
         # scale setting
         self.__dict_print_scale = 1
@@ -260,12 +261,14 @@ class DICT(object):
         # set buttons icons
         if True:
             self.dlg.toolButtonPlaceFolio.setIcon(QIcon(':/plugins/DICT/icon_folio.png'))
+            self.dlg.toolButtonCleanFolios.setIcon(QIcon(':/plugins/DICT/icon_purge_folios.png'))
             self.dlg.toolButtonCreateMaps.setIcon(QIcon(':/plugins/DICT/icon_maps.png'))
             self.dlg.toolButtonEditForm.setIcon(QIcon(':/plugins/DICT/icon_edit_form.png'))
             self.dlg.toolButtonCleanCanvas.setIcon(QIcon(':/plugins/DICT/icon_clean_canvas.png'))
 
         # connect signals
         self.dlg.toolButtonPlaceFolio.clicked.connect(self.place_folio_tool)
+        self.dlg.toolButtonCleanFolios.clicked.connect(self.clean_folios)
         self.dlg.toolButtonCreateMaps.clicked.connect(self.create_pdf_maps)
         self.dlg.toolButtonEditForm.clicked.connect(self.edit_cerfa)
         self.dlg.toolButtonCleanCanvas.clicked.connect(self.clean_canvas)
@@ -497,11 +500,15 @@ class DICT(object):
         titre = ""
         pdf = ""
         planPDF = []
-        self.clean_canvas()
+        self.clean_folios()
+        self.clean_works_footprint()
+        self.clean_variables()
         msgBox = QMessageBox()
         msgBox.setTextFormat(Qt.RichText)
         if len(self.dlg.lineEdit.text()) > 0:
             self.__dtdict = DICT_xml(self.dlg.lineEdit.text())
+
+            QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_fullfilename', self.dlg.lineEdit.text())
 
             QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_type_demande', self.__dtdict.xml_demande.type_demande())
             self.filename = self.prefix() + " " + self.__dtdict.xml_demande.type_demande() \
@@ -530,16 +537,25 @@ class DICT(object):
             self.dlg.labelNo_teleservice.setText(self.__dtdict.xml_demande.dictionnaire()["no_teleservice"])
             if "tvx_adresse" in self.dicoDeclarant():
                 self.dlg.labelAdresse_travaux.setText(self.__dtdict.xml_demande.dictionnaire()["tvx_adresse"])
+                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_tvx_adresse',
+                                                             self.__dtdict.xml_demande.dictionnaire()["tvx_adresse"])
             else:
                 self.dlg.labelAdresse_travaux.setText("")
+                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_tvx_adresse', "")
             if "tvx_commune" in self.dicoDeclarant():
                 self.dlg.labelCommune_travaux.setText(self.__dtdict.xml_demande.dictionnaire()["tvx_commune"])
+                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_tvx_commune',
+                                                             self.__dtdict.xml_demande.dictionnaire()["tvx_commune"])
             else:
                 self.dlg.labelCommune_travaux.setText("")
+                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_tvx_commune', "")
             if "tvx_description" in self.dicoDeclarant():
                 self.dlg.labelDescription_travaux.setText(self.__dtdict.xml_demande.dictionnaire()["tvx_description"])
+                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_tvx_description',
+                                                             self.__dtdict.xml_demande.dictionnaire()["tvx_description"])
             else:
                 self.dlg.labelDescription_travaux.setText("")
+                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), 'dict_tvx_description', "")
 
             if "taille_des_plans" in self.dicoDeclarant():
                 #print( self.dicoDeclarant()["taille_des_plans"])
@@ -743,29 +759,61 @@ class DICT(object):
             pdf = target_form + ".pdf"
             self.open_file(target_form + ".fdf")
 
-    def clean_canvas(self):
-        FolioGeometry.removeExistingFolios()
-        DICT_geometrie.removeExistingGeometries()
-        self.iface.mapCanvas().refresh()
-
-        self.dlg.labelType_demande.setText("")
-        self.dlg.labelNo_teleservice.setText("")
-        self.dlg.labelAdresse_travaux.setText("")
-        self.dlg.labelCommune_travaux.setText("")
-        self.dlg.labelDescription_travaux.setText("")
-
-        self.dlg.comboBoxLayout.setCurrentIndex(0)
+    @classmethod
+    def clean_variables(cls):
+        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_fullfilename')
         QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_type_demande')
         QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_no_teleservice')
-        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_prefix')
-        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_suffix')
-        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_map_prefix')
-        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_map_suffix')
+        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_tvx_adresse')
+        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_tvx_commune')
+        QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_tvx_description')
         QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_filename')
         QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_map_filename')
         QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_layout_name')
         QgsExpressionContextUtils.removeProjectVariable(QgsProject.instance(), 'dict_print_scale')
+
+    def clean_folios(self):
+        FolioGeometry.removeExistingFolios()
         self.__dict_layout.removeProjectLayouts(True)
+        self.iface.mapCanvas().refresh()
+        if self.dlg:
+            self.dlg.comboBoxPrintScale.setEnabled(True)
+            self.dlg.comboBoxLayout.setEnabled(True)
+        self.iface.actionIdentify().trigger()
+
+    def clean_works_footprint(self):
+        DICT_geometrie.removeExistingGeometries()
+        self.iface.mapCanvas().refresh()
+
+        if self.dlg:
+            self.dlg.labelType_demande.setText("")
+            self.dlg.labelNo_teleservice.setText("")
+            self.dlg.labelAdresse_travaux.setText("")
+            self.dlg.labelCommune_travaux.setText("")
+            self.dlg.labelDescription_travaux.setText("")
+            self.dlg.comboBoxLayout.setCurrentIndex(0)
+
+    def clean_fdf(self):
+        # WARNING: according to /DICT/configRep definition, clean_fdf() must be called before clean_variables(), (ie if
+        #          /DICT/configRep uses dict_xxx variable
+        try:
+            target_path = Utils.expandVariablesInString(QSettings().value("/DICT/configRep"), True)
+            if self.filename:
+                target_form = os.path.join(target_path, "{}{}".format(self.filename, ".fdf"))
+                if os.path.exists(target_form):
+                    os.remove(target_form)
+
+        except Exception as e:
+            msg1 = "Impossible de supprimer le fichier .fdf"
+            msg2 = str(e)
+            self.iface.messageBar().pushMessage(msg1, msg2, Qgis.Warning, 10)
+
+    def clean_canvas(self):
+        self.clean_fdf()
+        self.clean_folios()
+        self.clean_works_footprint()
+        self.clean_variables()
+        self.dlg.lineEdit.setText("")
 
     def create_pdf_maps(self):
         #print("create_pdf_maps")
