@@ -25,6 +25,8 @@ import os
 
 from PyQt5 import uic, QtCore, QtWidgets
 from sys import platform as _platform
+from qgis.core import QgsApplication
+from .utils import Utils
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'DICT_dialog_config.ui'))
@@ -44,9 +46,12 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         self.configRep.setText(QtCore.QSettings().value(
                                 "/DICT/configRep",
                                 QtCore.QDir.homePath()))
-        self.configRepXML.setText(QtCore.QSettings().value(
-                                "/DICT/configRepXML",
+        self.configXML.setText(QtCore.QSettings().value(
+                                "/DICT/configXML",
                                 QtCore.QDir.homePath()))
+        self.configQPT.setText(QtCore.QSettings().value(
+                                "/DICT/configQPT",
+                                os.path.join(QgsApplication.qgisSettingsDirPath(), 'composer_templates')))
         self.configPDFTK.setText(QtCore.QSettings().value(
                                 "/DICT/configPDFTK",
                                 QtCore.QDir.homePath()))
@@ -91,7 +96,9 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         self.toolButton.pressed.connect(
             lambda: self.showDialogConfig(self.configRep))
         self.toolButtonXML.pressed.connect(
-            lambda: self.showDialogConfig(self.configRepXML))
+            lambda: self.showDialogConfig(self.configXML))
+        self.toolButtonQPT.pressed.connect(
+            lambda: self.showDialogConfig(self.configQPT))
         self.toolButtonPDFTK.pressed.connect(
             lambda: self.showDialogConfig(self.configPDFTK, "Executable"))
 
@@ -121,6 +128,8 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
         if rep:
             if QtCore.QFileInfo(rep).exists():
                 QtCore.QSettings().setValue("/DICT/"+nom, rep)
+            elif Utils.stringContainsVariable(rep):
+                QtCore.QSettings().setValue("/DICT/"+nom, rep)
             else:
                 if str(QtCore.QFileInfo(rep).path()) != '.':
                     QtCore.QSettings().setValue("/DICT/" + nom,
@@ -142,7 +151,8 @@ class DICTDialogConfig(QtWidgets.QDialog, FORM_CLASS):
 
     def accept(self):
         self.rep(self.configRep, "configRep")
-        self.rep(self.configRepXML, "configRepXML")
+        self.rep(self.configXML, "configXML")
+        self.rep(self.configQPT, "configQPT")
         self.rep(self.configPDFTK, "configPDFTK")
 
         QtCore.QSettings().setValue("/DICT/configExtension",
