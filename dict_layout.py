@@ -106,6 +106,7 @@ class DictLayout:
 
         profile_dir = QgsApplication.qgisSettingsDirPath()
         templates_dir = os.path.join(profile_dir, 'composer_templates')
+        os.makedirs(templates_dir, exist_ok=True)
 
         # Search the templates folder and add files to templates list and sort it
         templates = [f.name for f in os.scandir(templates_dir) if f.is_file()]

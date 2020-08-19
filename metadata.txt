@@ -10,7 +10,7 @@
 name=DICT
 qgisMinimumVersion=3.14
 description=Assistant pour répondre au DT/DICT (French only / Français seulement)
-version=version 0.3.0
+version=version 0.4.1
 author=Loïc BARTOLETTI (Oslandia)
 email=loic.bartoletti@oslandia.com
 about=Le plugin permet de charger un XML d'une demande de DT/DICT pour exporter le plan à fournir avec le formulaire. Ce dernier est pré rempli par le plugin et se complète par un assistant reprennant le cerfa. Veuillez vous rendre sur la page du projet pour trouver la documentation.

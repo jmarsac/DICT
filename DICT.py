@@ -235,6 +235,7 @@ class DICT(object):
         firstUse = QSettings().value("DICT/isFirstUse" , 1, type = int)
         if firstUse == 1:
             DictLayout.init_templates(True)
+            self.__dict_layout.loadTemplates(self.dlg.comboBoxLayout)
             QSettings().setValue("DICT/isFirstUse", 0)
             self.runAbout()
 
