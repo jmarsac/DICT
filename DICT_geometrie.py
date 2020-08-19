@@ -2,14 +2,10 @@
 # -*- coding:utf-8 -*-
 
 from qgis.core import *
-from qgis.gui import *
 from qgis.utils import iface
 from PyQt5.QtCore import *
-from PyQt5.QtGui import QPainter
-from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtWidgets import QMessageBox
 from .DICT_dialog_composer import DICTDialogComposer
-from math import ceil, pow
 from osgeo import ogr
 import os
 
@@ -24,25 +20,30 @@ class DICT_geometrie(object):
         msgBox.setTextFormat(Qt.RichText)
         self.__layer = None
         self._epsg = epsg
-        self._geom = []
         try:
-            self._geom = self.__dictGmlGeom2qgisGeom(gml)
+            self._geom = self.dictGmlGeom2qgisGeom(gml)
         except:
             msgBox.setText("Erreur d'analyse de la géométrie.")
             msgBox.exec_()
             return
 
-    def __dictGmlGeom2qgisGeom(self, gml):
+    @staticmethod
+    def dictGmlGeom2qgisGeom(gml):
         try:
             l = len(gml)
             if l > 0:
-                qgs_geometry = []
+                polygons = []
+                wkts = []
                 for gml_string in gml:
-                    polygon = QgsGeometry.fromWkt(ogr.CreateGeometryFromGML(gml_string).ExportToWkt())
-                    qgs_geometry.append(polygon)
+                    wkts.append(ogr.CreateGeometryFromGML(gml_string).ExportToWkt()[8:])
+                multi_wkt = "MULTIPOLYGON (" + ",".join(wkts) + ")"
+                qgs_geometry = QgsGeometry.fromWkt(multi_wkt)
+            else:
+                iface.messageBar().pushMessage("Erreur analyse GML", "Le bloc GML est vide", Qgis.Critical)
+
         except Exception as e:
-            qgs_geometry = [QgsGeometry()]
-            iface.messageBar().pushMessage("Erreur analyse GML", str(e) + gml_string, Qgis.Info )
+            qgs_geometry = QgsGeometry()
+            iface.messageBar().pushMessage("Erreur analyse GML", str(e) + gml_string, Qgis.Critical )
 
         return qgs_geometry
 
@@ -55,19 +56,23 @@ class DICT_geometrie(object):
     def empriseLayer(cls):
         return QgsProject.instance().mapLayersByName(cls.__layerName)[0]
 
-    def addGeometrie(self):
+    def addFeature(self, type_demande: str=None, no_teleservice: str=None):
         vl = "multipolygon?crs=epsg:" + self._epsg + "&index=yes"
         mem_layer = QgsVectorLayer(vl, self.__layerName, "memory")
         pr = mem_layer.dataProvider()
 
-        f = []
-        nb = 0
-        for geom in self._geom:
-            f.append(QgsFeature())
-            f[nb].setGeometry(geom)
-            nb += 1
+        fields = QgsFields()
+        fields.append(QgsField("type_demande", QVariant.String))
+        fields.append(QgsField("no_teleservice", QVariant.String))
+        pr.addAttributes(fields.toList())
+        feature = QgsFeature(fields)
+        if type_demande:
+            feature.setAttribute(0, type_demande)
+        if no_teleservice:
+            feature.setAttribute(1, no_teleservice)
+        feature.setGeometry(self._geom)
 
-        pr.addFeatures(f)
+        pr.addFeatures([feature])
         mem_layer.commitChanges()
         mem_layer.updateExtents()
         prop = mem_layer.renderer().symbol().symbolLayers()[0].properties()
@@ -87,7 +92,10 @@ class DICT_geometrie(object):
         self._geomBB = geomBB.boundingBox()
         mc.setExtent(self._geomBB)
         mc.zoomScale(mc.scale() * 2)
+        mem_layer.reload()
 
+    def empriseGeometry(self):
+        return self._geom
 
     def geometriePDF(self, titre, taillePlan):
         # Display layout list
